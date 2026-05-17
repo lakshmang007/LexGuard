@@ -1,0 +1,35 @@
+{
+  "entities": {
+    "Analysis": {
+      "title": "Contract Analysis",
+      "description": "Output of a contract intelligence scan",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "fileName": { "type": "string" },
+        "docText": { "type": "string" },
+        "insights": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": { "type": "string" },
+              "extracted_text": { "type": "string" },
+              "risk_score": { "type": "integer" },
+              "plain_language_explanation": { "type": "string" }
+            }
+          }
+        },
+        "riskScore": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "fileName", "insights", "createdAt"]
+    }
+  },
+  "firestore": {
+    "analyses": {
+      "schema": "Analysis",
+      "description": "Stores all user contract analyses"
+    }
+  }
+}

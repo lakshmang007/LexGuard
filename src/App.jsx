@@ -1,7 +1,18 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { ref, uploadBytes } from "firebase/storage";
 import { signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
-import { storage, auth, googleProvider } from './firebase';
+import { 
+  collection, 
+  addDoc, 
+  query, 
+  where, 
+  orderBy, 
+  onSnapshot,
+  serverTimestamp,
+  doc,
+  deleteDoc
+} from "firebase/firestore";
+import { storage, auth, googleProvider, db } from './firebase';
 import { analyzeDocumentWithAI, analyzeFileWithAI, askLexGuardChatbot } from './services/ai';
 import { 
   Shield, 
@@ -22,7 +33,8 @@ import {
   Info,
   CheckCircle2,
   MoreVertical,
-  Plus
+  Plus,
+  CreditCard
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
@@ -63,6 +75,7 @@ function App() {
   const [isScanning, setIsScanning] = useState(false);
   const [docText, setDocText] = useState("");
   const [insights, setInsights] = useState([]);
+  const [analysisReport, setAnalysisReport] = useState(null); // Full report for PDF
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
   // Settings State
@@ -79,14 +92,77 @@ function App() {
     { sender: 'bot', text: "Hello! I am the LexGuard Assistant. Ask me anything about your uploaded contract." }
   ]);
 
-  // Auth Listener
+  // Persistent History State
+  const [analysisHistory, setAnalysisHistory] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [saveStatus, setSaveStatus] = useState(null); // 'saving', 'saved', 'error'
+  const [apiError, setApiError] = useState(null);
+
+  // Dashboard Stats
+  const stats = useMemo(() => {
+    if (analysisHistory.length === 0) return { total: 0, highRisks: 0, avgScore: 0 };
+    const total = analysisHistory.length;
+    let highRisks = 0;
+    let sumScore = 0;
+    analysisHistory.forEach(item => {
+      const itemHighRisks = item.insights?.filter(i => i.risk_score >= 7).length || 0;
+      highRisks += itemHighRisks;
+      
+      const sessionAvg = item.insights?.length > 0 
+        ? item.insights.reduce((acc, curr) => acc + curr.risk_score, 0) / item.insights.length 
+        : 0;
+      sumScore += (10 - sessionAvg) * 10; // Convert to 0-100 compliance
+    });
+    return {
+      total,
+      highRisks,
+      avgScore: Math.round(sumScore / total)
+    };
+  }, [analysisHistory]);
+
+  const filteredInsights = useMemo(() => {
+    if (!searchQuery) return insights;
+    return insights.filter(i => 
+      i.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      i.plain_language_explanation.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      i.extracted_text.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [insights, searchQuery]);
+
+  // Auth Listener & History Sync
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setAuthLoading(false);
     });
-    return () => unsubscribe();
+
+    return () => unsubscribeAuth();
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setTimeout(() => setAnalysisHistory([]), 0);
+      return;
+    }
+
+    const q = query(
+      collection(db, "analyses"),
+      where("userId", "==", user.uid),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsubscribeHistory = onSnapshot(q, (snapshot) => {
+      const history = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setAnalysisHistory(history);
+    }, (err) => {
+      console.error("History sync failed:", err);
+    });
+
+    return () => unsubscribeHistory();
+  }, [user]);
 
   const handleLogin = async () => {
     try {
@@ -98,6 +174,63 @@ function App() {
 
   const handleLogout = async () => {
     await signOut(auth);
+    setFileName(null);
+    setInsights([]);
+    setDocText("");
+    setAnalysisReport(null);
+  };
+
+  const saveAnalysisToDB = async () => {
+    if (!user || !insights.length) return;
+    setSaveStatus('saving');
+    try {
+      await addDoc(collection(db, "analyses"), {
+        userId: user.uid,
+        fileName: fileName || "Untitled Analysis",
+        docText: docText.substring(0, 5000), // Limit storage for long docs
+        insights: insights,
+        createdAt: serverTimestamp()
+      });
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus(null), 3000);
+    } catch (error) {
+      console.error("Save failed:", error);
+      setSaveStatus('error');
+    }
+  };
+
+  const deleteAnalysis = async (e, id) => {
+    e.stopPropagation();
+    try {
+      await deleteDoc(doc(db, "analyses", id));
+    } catch (error) {
+      console.error("Delete failed:", error);
+    }
+  };
+
+  const downloadReport = () => {
+    if (!insights.length) return;
+    
+    let content = `LEXGUARD INTELLIGENCE REPORT\n`;
+    content += `File: ${fileName}\n`;
+    content += `Date: ${new Date().toLocaleString()}\n`;
+    content += `------------------------------------------\n\n`;
+    
+    insights.forEach((insight, idx) => {
+      content += `${idx + 1}. ${insight.title} (Risk: ${insight.risk_score}/10)\n`;
+      content += `Explanation: ${insight.plain_language_explanation}\n`;
+      content += `Original Text: "${insight.extracted_text}"\n\n`;
+    });
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `LexGuard_Report_${fileName.replace(/\.[^/.]+$/, "")}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const saveApiKey = () => {
@@ -115,8 +248,12 @@ function App() {
     try {
       const analysisResults = await analyzeDocumentWithAI(text);
       setInsights(analysisResults);
+      setApiError(null);
     } catch (error) {
       console.error("Error processing document:", error);
+      if (error.message.includes("401") || error.message.includes("403") || error.message.toLowerCase().includes("leaked")) {
+        setApiError("Your API Key has been reported as leaked or is invalid. Please go to Settings and provide a valid Gemini API Key.");
+      }
     } finally {
       setIsScanning(false);
     }
@@ -141,6 +278,9 @@ function App() {
     try {
       if (uploadedFile.type === "application/pdf") {
         const report = await analyzeFileWithAI(uploadedFile);
+        setApiError(null);
+        setAnalysisReport(report);
+        
         // Transform full report highRiskClauses into the format the UI expects for 'insights'
         if (report.highRiskClauses) {
           const transformedInsights = report.highRiskClauses.map((c, idx) => ({
@@ -151,7 +291,7 @@ function App() {
             plain_language_explanation: c.plainEnglish + " - " + c.implication
           }));
           setInsights(transformedInsights);
-          setDocText("Full PDF analysis complete. See intelligence recon for details. (Native PDF view currently unavailable)");
+          setDocText(report.executiveSummary || "Full PDF analysis complete. See intelligence recon for details.");
         } else if (Array.isArray(report)) {
           setInsights(report);
         }
@@ -169,6 +309,9 @@ function App() {
       }
     } catch (error) {
       console.error("Error processing file:", error);
+      if (error.message.includes("401") || error.message.includes("403") || error.message.toLowerCase().includes("leaked")) {
+        setApiError("Your API Key has been reported as leaked or is invalid. Please go to Settings and provide a valid Gemini API Key.");
+      }
       setInsights([{
         id: "error",
         title: "Analysis Failed",
@@ -201,8 +344,16 @@ function App() {
     const userMsg = chatInput.trim();
     setChatInput("");
     setChatHistory(prev => [...prev, { sender: 'user', text: userMsg }]);
-    const reply = await askLexGuardChatbot(userMsg, docText);
-    setChatHistory(prev => [...prev, { sender: 'bot', text: reply }]);
+    try {
+      const reply = await askLexGuardChatbot(userMsg, docText);
+      setChatHistory(prev => [...prev, { sender: 'bot', text: reply }]);
+      setApiError(null);
+    } catch (error) {
+      if (error.message.includes("401") || error.message.includes("403") || error.message.toLowerCase().includes("leaked")) {
+        setApiError("API Key issues detected. Please check Settings.");
+      }
+      setChatHistory(prev => [...prev, { sender: 'bot', text: "I'm having trouble connecting to my brain. Error: " + error.message }]);
+    }
   };
 
   if (authLoading) {
@@ -260,6 +411,8 @@ function App() {
     { id: 'Dashboard', icon: LayoutDashboard },
     { id: 'Upload', icon: UploadIcon },
     { id: 'History', icon: FolderOpen },
+    { id: 'Pricing', icon: CreditCard }, 
+    { id: 'About', icon: HelpCircle },
     { id: 'Settings', icon: Settings },
   ];
 
@@ -285,15 +438,25 @@ function App() {
             <Search size={20} />
             <input 
               type="text" 
-              placeholder="Search contracts and insights" 
+              placeholder="Search insights..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-transparent border-none outline-none w-full text-sm"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant"><HelpCircle size={22} /></button>
-          <button className="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant relative">
+          <button 
+            onClick={() => setActiveTab('About')}
+            className="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant"
+          >
+            <HelpCircle size={22} />
+          </button>
+          <button 
+            onClick={() => setActiveTab('Pricing')}
+            className="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant relative"
+          >
             <Bell size={22} />
             <span className="absolute top-2 right-2 w-2 h-2 bg-google-red rounded-full border-2 border-surface"></span>
           </button>
@@ -448,7 +611,7 @@ function App() {
                         <MoreVertical size={20} className="text-on-surface-variant" />
                       </div>
                       <div className="space-y-1">
-                        <p className="text-4xl font-semibold">12</p>
+                        <p className="text-4xl font-semibold">{stats.total}</p>
                         <p className="text-sm text-on-surface-variant">Contracts Analyzed</p>
                       </div>
                     </div>
@@ -460,7 +623,7 @@ function App() {
                         <MoreVertical size={20} className="text-on-surface-variant" />
                       </div>
                       <div className="space-y-1">
-                        <p className="text-4xl font-semibold">4</p>
+                        <p className="text-4xl font-semibold">{stats.highRisks}</p>
                         <p className="text-sm text-on-surface-variant">High Risks Identified</p>
                       </div>
                     </div>
@@ -472,7 +635,7 @@ function App() {
                         <MoreVertical size={20} className="text-on-surface-variant" />
                       </div>
                       <div className="space-y-1">
-                        <p className="text-4xl font-semibold">92%</p>
+                        <p className="text-4xl font-semibold">{stats.avgScore}%</p>
                         <p className="text-sm text-on-surface-variant">Compliance Score</p>
                       </div>
                     </div>
@@ -533,7 +696,8 @@ function App() {
                       <div className="p-4 bg-surface-container-high rounded-xl flex items-start gap-3">
                         <Info size={20} className="text-google-blue mt-0.5 shrink-0" />
                         <p className="text-sm text-on-surface-variant leading-relaxed">
-                          Your key is stored securely in your browser's local storage and used only for direct API requests.
+                          Your key is stored securely in your browser's local storage and used only for direct API requests. 
+                          If you see "403 Forbidden" errors, your default API key might be leaked. Please provide a new one from AI Studio.
                         </p>
                       </div>
                     </div>
@@ -541,12 +705,171 @@ function App() {
                 </motion.div>
               )}
 
+              {activeTab === 'Pricing' && (
+                <motion.div 
+                  key="pricing"
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="space-y-8"
+                >
+                  <div className="text-center space-y-4 py-8">
+                    <h2 className="text-4xl font-medium tracking-tight">Simple, Transparent Intelligence</h2>
+                    <p className="text-on-surface-variant max-w-xl mx-auto">Choose the reconnaissance level that fits your legal throughput needs.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="m3-card p-8 border-2 border-outline hover:border-google-blue transition-all space-y-6">
+                      <div className="space-y-2">
+                        <h3 className="text-xl font-medium">Free</h3>
+                        <p className="text-4xl font-semibold">$0 <span className="text-sm font-normal text-on-surface-variant">/mo</span></p>
+                      </div>
+                      <ul className="space-y-3 text-sm text-on-surface-variant">
+                        <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-google-green" /> 5 Analyses / mo</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-google-green" /> Gemini 1.5 Flash</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-google-green" /> Basic Risk Scoring</li>
+                      </ul>
+                      <button className="w-full py-3 bg-surface-container-high text-on-surface font-medium rounded-xl hover:bg-surface-container-highest transition-colors">Current Plan</button>
+                    </div>
+
+                    <div className="m3-card p-8 border-2 border-google-blue bg-google-blue-container/10 space-y-6 relative overflow-hidden">
+                      <div className="absolute top-4 right-[-35px] bg-google-blue text-white text-[10px] font-bold py-1 px-10 rotate-45">POPULAR</div>
+                      <div className="space-y-2">
+                        <h3 className="text-xl font-medium">Pro</h3>
+                        <p className="text-4xl font-semibold">$29 <span className="text-sm font-normal text-on-surface-variant">/mo</span></p>
+                      </div>
+                      <ul className="space-y-3 text-sm text-on-surface-variant">
+                        <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-google-green" /> Unlimited Analyses</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-google-green" /> Gemini 1.5 Pro Enabled</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-google-green" /> Priority Recon Engine</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-google-green" /> Advanced PDF OCR</li>
+                      </ul>
+                      <button 
+                        onClick={() => alert("Pro Plan integration coming soon! We are currently in Beta.")}
+                        className="w-full py-3 bg-google-blue text-white font-medium rounded-xl hover:bg-google-blue-hover transition-colors shadow-lg"
+                      >
+                        Upgrade to Pro
+                      </button>
+                    </div>
+
+                    <div className="m3-card p-8 border-2 border-outline hover:border-google-blue transition-all space-y-6">
+                      <div className="space-y-2">
+                        <h3 className="text-xl font-medium">Enterprise</h3>
+                        <p className="text-4xl font-semibold">Custom</p>
+                      </div>
+                      <ul className="space-y-3 text-sm text-on-surface-variant">
+                        <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-google-green" /> Custom Compliance Engine</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-google-green" /> Dedicated AI Instance</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-google-green" /> SAML/SSO Integration</li>
+                      </ul>
+                      <button 
+                        onClick={() => alert("Contacting sales... (Redirecting to enterprise form placeholder)")}
+                        className="w-full py-3 border border-outline text-on-surface font-medium rounded-xl hover:bg-surface-container-low transition-colors"
+                      >
+                        Contact Sales
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {activeTab === 'About' && (
+                <motion.div 
+                  key="about"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="max-w-3xl mx-auto space-y-12 py-8"
+                >
+                  <div className="space-y-6">
+                    <h2 className="text-4xl font-medium tracking-tight">The LexGuard Mission</h2>
+                    <p className="text-lg text-on-surface-variant leading-relaxed">
+                      LexGuard was founded on a simple premise: individuals should never be at a structural disadvantage when signing contracts. 
+                      Legal teams spend thousands of hours drafting agreements that protect corporations, often at the expense of the signer's personal or professional rights.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-medium">Empowering Creators</h3>
+                      <p className="text-on-surface-variant">We help artists, developers, and writers protect their Intellectual Property from overly broad "Work for Hire" clauses.</p>
+                    </div>
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-medium">Democratizing Law</h3>
+                      <p className="text-on-surface-variant">By leveraging Google's most advanced LLMs, we bring high-end legal reconnaissance to everyone's pocket.</p>
+                    </div>
+                  </div>
+
+                  <div className="p-8 bg-surface-container rounded-3xl space-y-4">
+                    <h3 className="text-xl font-medium">Disclaimer</h3>
+                    <p className="text-sm text-on-surface-variant">
+                      LexGuard is an AI-powered intelligence platform, not a law firm. Our analysis provides technical reconnaissance of contractual language but does not constitute legal advice. 
+                      Always consult with a qualified legal professional for critical life or business decisions.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
               {activeTab === 'History' && (
-                <div className="text-center py-24 space-y-4">
-                  <FolderOpen size={64} className="mx-auto text-outline" />
-                  <h3 className="text-xl font-medium">History Module</h3>
-                  <p className="text-on-surface-variant">Your analyzed contracts will appear here once saved to the database.</p>
-                </div>
+                <motion.div 
+                  key="history"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="space-y-6"
+                >
+                  <div className="space-y-2">
+                    <h2 className="text-2xl font-medium">Analysis History</h2>
+                    <p className="text-on-surface-variant">Access your previous contract intelligence reports.</p>
+                  </div>
+
+                  {analysisHistory.length === 0 ? (
+                    <div className="text-center py-24 m3-card border-dashed">
+                      <FolderOpen size={64} className="mx-auto text-outline mb-4" />
+                      <p className="text-on-surface-variant">No history found. Start your first analysis today.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {analysisHistory.map(item => (
+                        <div 
+                          key={item.id} 
+                          onClick={() => {
+                            setFileName(item.fileName);
+                            setInsights(item.insights);
+                            setDocText(item.docText);
+                            setActiveTab('Upload');
+                          }}
+                          className="m3-card p-6 hover:shadow-lg transition-all cursor-pointer group relative"
+                        >
+                          <button 
+                            onClick={(e) => deleteAnalysis(e, item.id)}
+                            className="absolute top-4 right-4 p-2 rounded-full hover:bg-google-red-container text-on-surface-variant hover:text-google-red opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X size={16} />
+                          </button>
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-on-surface-variant">
+                              <FileText size={20} />
+                            </div>
+                            <div className="overflow-hidden">
+                              <h4 className="font-medium truncate">{item.fileName}</h4>
+                              <p className="text-xs text-on-surface-variant">
+                                {item.createdAt?.toDate().toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between mt-6 pt-4 border-t border-outline">
+                            <span className="text-xs font-medium text-on-surface-variant">
+                              {item.insights?.length || 0} Insights
+                            </span>
+                            <div className="flex gap-1">
+                              {Array.from({ length: 3 }).map((_, i) => (
+                                <div key={i} className={cn("w-1.5 h-1.5 rounded-full", i === 0 ? "bg-google-red" : i === 1 ? "bg-google-yellow" : "bg-google-green")}></div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
               )}
 
               {activeTab === 'Upload' && !fileName && (
@@ -613,8 +936,23 @@ function App() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <button className="px-5 py-2 border border-outline rounded-full text-sm font-medium hover:bg-surface-container">Download Report</button>
-                      <button className="px-5 py-2 bg-google-blue text-white rounded-full text-sm font-medium">Save to Database</button>
+                      <button 
+                        onClick={downloadReport}
+                        className="px-5 py-2 border border-outline rounded-full text-sm font-medium hover:bg-surface-container"
+                      >
+                        Download Report
+                      </button>
+                      <button 
+                        onClick={saveAnalysisToDB}
+                        className={cn(
+                          "px-5 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2",
+                          saveStatus === 'saved' ? "bg-google-green text-white" : "bg-google-blue text-white"
+                        )}
+                      >
+                        {saveStatus === 'saving' ? "Saving..." : 
+                         saveStatus === 'saved' ? "Saved ✓" : 
+                         saveStatus === 'error' ? "Error" : "Save to Database"}
+                      </button>
                     </div>
                   </div>
 
@@ -639,6 +977,44 @@ function App() {
                     <div className="flex flex-col gap-6 overflow-hidden">
                        <h3 className="text-sm font-medium uppercase tracking-widest text-on-surface-variant">Intelligence Recon</h3>
                        <div className="flex-1 overflow-auto space-y-4 pr-4">
+                          {!isScanning && analysisReport && analysisReport.riskScore !== undefined && (
+                            <motion.div 
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="m3-card p-6 bg-google-blue-container/20 border-google-blue/30 space-y-4"
+                            >
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-bold flex items-center gap-2">
+                                  <Shield size={18} className="text-google-blue" />
+                                  Executive Summary
+                                </h4>
+                                <span className={cn("px-3 py-1 rounded-full text-xs font-bold", 
+                                  analysisReport.riskScore >= 70 ? "bg-google-red text-white" : 
+                                  analysisReport.riskScore >= 40 ? "bg-google-yellow text-on-surface" : 
+                                  "bg-google-green text-white"
+                                )}>
+                                  Overall Risk: {analysisReport.riskScore}%
+                                </span>
+                              </div>
+                              <p className="text-sm text-on-surface leading-relaxed">
+                                {analysisReport.executiveSummary}
+                              </p>
+                              {analysisReport.negotiationRecommendations && (
+                                <div className="space-y-2 pt-2 border-t border-outline">
+                                  <p className="text-xs font-bold uppercase text-on-surface-variant">Negotiation Strategy</p>
+                                  <ul className="space-y-1">
+                                    {analysisReport.negotiationRecommendations.slice(0, 3).map((rec, i) => (
+                                      <li key={i} className="text-xs flex items-start gap-2">
+                                        <div className="w-1 h-1 rounded-full bg-google-blue mt-1.5 shrink-0" />
+                                        {rec}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </motion.div>
+                          )}
+
                           {isScanning ? (
                             Array.from({ length: 3 }).map((_, i) => (
                               <div key={i} className="m3-card p-6 animate-pulse space-y-4">
@@ -647,7 +1023,7 @@ function App() {
                               </div>
                             ))
                           ) : (
-                            insights.map((insight) => (
+                            filteredInsights.map((insight) => (
                               <motion.div 
                                 key={insight.id} 
                                 initial={{ x: 20, opacity: 0 }}
@@ -660,9 +1036,20 @@ function App() {
                               >
                                 <div className="flex justify-between items-start mb-4">
                                   <h4 className="font-semibold text-lg">{insight.title}</h4>
-                                  <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold uppercase", getRiskColor(insight.risk_score))}>
-                                    Score: {insight.risk_score}/10
-                                  </span>
+                                  <div className="flex flex-col items-end gap-2">
+                                    <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold uppercase", getRiskColor(insight.risk_score))}>
+                                      Score: {insight.risk_score}/10
+                                    </span>
+                                    <button 
+                                      onClick={() => {
+                                        setChatInput(`Tell me more about the "${insight.title}" clause and how I can negotiate it.`);
+                                        setIsChatOpen(true);
+                                      }}
+                                      className="text-[10px] text-google-blue font-medium hover:underline flex items-center gap-1"
+                                    >
+                                      <MessageSquare size={10} /> Explainer
+                                    </button>
+                                  </div>
                                 </div>
                                 <p className="text-sm text-on-surface leading-relaxed mb-4">{insight.plain_language_explanation}</p>
                                 <div className="p-3 bg-surface-container-low rounded-lg text-xs italic text-on-surface-variant border border-outline">
@@ -755,8 +1142,41 @@ function App() {
       )}
 
       {/* System Status Snackbars Area */}
-      <div className="fixed bottom-6 left-6 z-50 flex flex-col gap-3">
-        {/* Placeholder for toasts */}
+      <div className="fixed bottom-6 left-6 z-50 flex flex-col gap-3 max-w-sm">
+        <AnimatePresence>
+          {apiError && (
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="bg-google-red p-4 rounded-xl text-white shadow-lg flex items-start gap-3"
+            >
+              <AlertTriangle className="shrink-0" size={20} />
+              <div className="space-y-2">
+                <p className="text-sm font-medium">{apiError}</p>
+                <button 
+                  onClick={() => { setActiveTab('Settings'); setApiError(null); }}
+                  className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded-md text-xs font-semibold"
+                >
+                  Go to Settings
+                </button>
+              </div>
+              <button onClick={() => setApiError(null)} className="p-1 hover:bg-white/20 rounded-full"><X size={16}/></button>
+            </motion.div>
+          )}
+          {saveStatus === 'saved' && (
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="bg-google-green p-4 rounded-xl text-white shadow-lg flex items-center gap-3"
+            >
+              <CheckCircle2 size={20} />
+              <p className="text-sm font-medium">Analysis saved to History</p>
+              <button onClick={() => setSaveStatus(null)} className="ml-4 p-1 hover:bg-white/20 rounded-full"><X size={16}/></button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

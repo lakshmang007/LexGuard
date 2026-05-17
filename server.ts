@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import multer from "multer";
 import pdf from "pdf-parse/lib/pdf-parse.js";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -16,10 +16,15 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
-// Shareable Gemini client initialization
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY || "",
-});
+// Helper to get Gemini client with specific key
+const getAiClient = (req: express.Request) => {
+  const customKey = req.headers["x-gemini-api-key"] as string;
+  const apiKey = customKey || process.env.GEMINI_API_KEY || "";
+  if (!apiKey) {
+    throw new Error("No Gemini API key found. Please provide one in the settings.");
+  }
+  return new GoogleGenerativeAI(apiKey);
+};
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
@@ -34,6 +39,11 @@ app.post("/api/analyze", upload.single("contract"), async (req, res) => {
   try {
     const file = req.file;
     const contractType = req.body.contractType || "General Contract";
+    const genAI = getAiClient(req);
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      generationConfig: { responseMimeType: "application/json" }
+    });
 
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
@@ -71,29 +81,25 @@ app.post("/api/analyze", upload.single("contract"), async (req, res) => {
     Be extremely critical. Look for "Missing Protections"—identifying what the drafter intentionally left out to protect themselves at the signer's expense.
     `;
 
-    const result = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-      }
-    });
-
-    const report = JSON.parse(result.text || "{}");
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+    const report = JSON.parse(responseText || "{}");
     res.json(report);
 
   } catch (error: any) {
     console.error("Analysis error:", error);
     
-    // Check for specific leaked API key error
-    if (error.message?.includes("leaked") || error.status === 403) {
-      return res.status(403).json({ 
-        error: "Your Gemini API Key appears to be invalid or reported as leaked. Please update or provide a new API key in the AI Studio Settings menu.",
-        details: error.message
+    const message = error.message || String(error);
+    if (message.includes("leaked") || message.includes("403") || message.includes("PERMISSION_DENIED")) {
+      // Use 401 Unauthorized instead of 403 to avoid generic Nginx 403 HTML override
+      return res.status(401).json({ 
+        error: "Your Gemini API Key is invalid or reported as leaked. Please go to Settings and provide a new key from AI Studio.",
+        details: message,
+        isApiKeyError: true
       });
     }
     
-    res.status(500).json({ error: error.message || "Failed to analyze contract" });
+    res.status(500).json({ error: message || "Failed to analyze contract" });
   }
 });
 
@@ -101,6 +107,11 @@ app.post("/api/analyze", upload.single("contract"), async (req, res) => {
 app.post("/api/analyze-text", async (req, res) => {
   try {
     const { text } = req.body;
+    const genAI = getAiClient(req);
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      generationConfig: { responseMimeType: "application/json" }
+    });
 
     if (!text || text.trim().length === 0) {
       return res.status(400).json({ error: "No text provided" });
@@ -123,28 +134,22 @@ app.post("/api/analyze-text", async (req, res) => {
     ${text}
     `;
 
-    const result = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-      }
-    });
-
-    res.json(JSON.parse(result.text || "[]"));
+    const result = await model.generateContent(prompt);
+    res.json(JSON.parse(result.response.text() || "[]"));
 
   } catch (error: any) {
     console.error("Text analysis error:", error);
     
-    // Check for specific leaked API key error
-    if (error.message?.includes("leaked") || error.status === 403) {
-      return res.status(403).json({ 
-        error: "Your Gemini API Key appears to be invalid or reported as leaked. Please update or provide a new API key in the AI Studio Settings menu.",
-        details: error.message
+    const message = error.message || String(error);
+    if (message.includes("leaked") || message.includes("403") || message.includes("PERMISSION_DENIED")) {
+      return res.status(401).json({ 
+        error: "Your Gemini API Key is invalid or reported as leaked. Please go to Settings and provide a new key from AI Studio.",
+        details: message,
+        isApiKeyError: true
       });
     }
     
-    res.status(500).json({ error: error.message || "Failed to analyze contract text" });
+    res.status(500).json({ error: message || "Failed to analyze contract text" });
   }
 });
 
@@ -152,6 +157,8 @@ app.post("/api/analyze-text", async (req, res) => {
 app.post("/api/chat", async (req, res) => {
   try {
     const { message, documentText } = req.body;
+    const genAI = getAiClient(req);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
     You are LexGuard, an AI legal assistant. 
@@ -165,25 +172,22 @@ app.post("/api/chat", async (req, res) => {
     Answer professionally, concisely, and helpfully. Do not give formal legal advice, but rather explain the implications based on the text.
     `;
 
-    const result = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
-    });
-
-    res.json({ reply: result.text });
+    const result = await model.generateContent(prompt);
+    res.json({ reply: result.response.text() });
 
   } catch (error: any) {
     console.error("Chat error:", error);
     
-    // Check for specific leaked API key error
-    if (error.message?.includes("leaked") || error.status === 403) {
-      return res.status(403).json({ 
-        error: "Your Gemini API Key appears to be invalid or reported as leaked. Please update or provide a new API key in the AI Studio Settings menu.",
-        details: error.message
+    const message = error.message || String(error);
+    if (message.includes("leaked") || message.includes("403") || message.includes("PERMISSION_DENIED")) {
+      return res.status(401).json({ 
+        error: "Your Gemini API Key is invalid or reported as leaked. Please go to Settings and provide a new key from AI Studio.",
+        details: message,
+        isApiKeyError: true
       });
     }
     
-    res.status(500).json({ error: error.message || "Failed to chat" });
+    res.status(500).json({ error: message || "Failed to chat" });
   }
 });
 

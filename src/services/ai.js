@@ -1,21 +1,42 @@
+const getHeaders = (contentType = "application/json") => {
+    const headers = {};
+    if (contentType) headers["Content-Type"] = contentType;
+    
+    const customKey = localStorage.getItem("gemini_api_key");
+    if (customKey) {
+        headers["x-gemini-api-key"] = customKey;
+    }
+    return headers;
+};
+
 export async function analyzeDocumentWithAI(documentText) {
     try {
         const response = await fetch("/api/analyze-text", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: getHeaders(),
             body: JSON.stringify({ text: documentText }),
         });
         
         if (!response.ok) {
             const contentType = response.headers.get("content-type");
+            let errorMessage = "Analysis failed";
             if (contentType && contentType.includes("application/json")) {
                 const errData = await response.json();
-                throw new Error(errData.error || "Analysis failed");
+                errorMessage = errData.error || errorMessage;
+                
+                // If it's a 401 or 403, we add a specific instruction
+                if (response.status === 401 || response.status === 403) {
+                    errorMessage = `API Key Error: ${errorMessage}`;
+                }
             } else {
                 const text = await response.text();
                 console.error("Non-JSON error response:", text);
-                throw new Error(`Server returned error (${response.status}). Please try again later.`);
+                errorMessage = `Server Error (${response.status}): The request could not be completed.`;
+                if (response.status === 401 || response.status === 403) {
+                    errorMessage = "Access Denied: Your API key was blocked or reported as leaked. Please update it in Settings.";
+                }
             }
+            throw new Error(errorMessage);
         }
         
         const contentType = response.headers.get("content-type");
@@ -43,19 +64,26 @@ export async function analyzeFileWithAI(file) {
         const formData = new FormData();
         formData.append("contract", file);
 
+        const customHeaders = getHeaders(null); // No content-type for multipart
         const response = await fetch("/api/analyze", {
             method: "POST",
+            headers: customHeaders,
             body: formData,
         });
 
         if (!response.ok) {
             const contentType = response.headers.get("content-type");
+            let errorMessage = "File analysis failed";
             if (contentType && contentType.includes("application/json")) {
                 const errData = await response.json();
-                throw new Error(errData.error || "Analysis failed");
+                errorMessage = errData.error || errorMessage;
             } else {
-                throw new Error(`Server error (${response.status}). The file might be too large or invalid.`);
+                errorMessage = `Server Error (${response.status}): The file could not be analyzed.`;
+                if (response.status === 401 || response.status === 403) {
+                    errorMessage = "Access Denied: Invalid or leaked API key. Please update it in Settings.";
+                }
             }
+            throw new Error(errorMessage);
         }
 
         const contentType = response.headers.get("content-type");
@@ -75,18 +103,21 @@ export async function askLexGuardChatbot(message, documentText) {
     try {
         const response = await fetch("/api/chat", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: getHeaders(),
             body: JSON.stringify({ message, documentText }),
         });
         
         if (!response.ok) {
             const contentType = response.headers.get("content-type");
+            let errorMessage = "Chat failed";
             if (contentType && contentType.includes("application/json")) {
                 const errData = await response.json();
-                throw new Error(errData.error || "Chat failed");
+                errorMessage = errData.error || errorMessage;
             } else {
-                throw new Error("Chat service unavailable");
+                errorMessage = "Chat service unavailable (Server Error)";
+                if (response.status === 401 || response.status === 403) errorMessage = "Chat Access Denied: Invalid or leaked API key.";
             }
+            throw new Error(errorMessage);
         }
         
         const contentType = response.headers.get("content-type");
