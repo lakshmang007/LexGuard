@@ -8,7 +8,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Setup multer for memory storage with limits
 const upload = multer({ 
@@ -72,7 +72,7 @@ app.post("/api/analyze", upload.single("contract"), async (req, res) => {
     `;
 
     const result = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -124,7 +124,7 @@ app.post("/api/analyze-text", async (req, res) => {
     `;
 
     const result = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -166,7 +166,7 @@ app.post("/api/chat", async (req, res) => {
     `;
 
     const result = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",
       contents: prompt,
     });
 
