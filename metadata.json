@@ -1,0 +1,8 @@
+{
+  "name": "LEXGUARD",
+  "description": "AI Contract Intelligence & Rights Analysis Platform. Identify hidden risks, exploitative clauses, and missing protections in legal documents.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

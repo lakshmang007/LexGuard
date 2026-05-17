@@ -1,0 +1,90 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  /* Google Material 3 Inspired Colors */
+  --color-google-blue: #1A73E8;
+  --color-google-blue-hover: #1765CC;
+  --color-google-blue-container: #E8F0FE;
+  
+  --color-google-red: #D93025;
+  --color-google-red-container: #FCE8E6;
+  
+  --color-google-yellow: #F9AB00;
+  --color-google-yellow-container: #FEF7E0;
+  
+  --color-google-green: #188038;
+  --color-google-green-container: #E6F4EA;
+  
+  /* Surface Tones */
+  --color-surface: #FFFFFF;
+  --color-surface-container-low: #F8F9FA;
+  --color-surface-container: #F1F3F4;
+  --color-surface-container-high: #E8EAED;
+  --color-surface-container-highest: #DEE1E6;
+  
+  /* Typography */
+  --color-on-surface: #202124;
+  --color-on-surface-variant: #5F6368;
+  --color-outline: #DADCE0;
+  
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+
+  @keyframes loading {
+    0% { transform: translateX(-100%) scaleX(0.2); }
+    50% { transform: translateX(0%) scaleX(0.5); }
+    100% { transform: translateX(100%) scaleX(0.2); }
+  }
+
+  --animate-loading: loading 2s infinite linear;
+}
+
+@layer base {
+  body {
+    @apply bg-surface-container-low text-on-surface antialiased;
+    font-family: var(--font-sans);
+  }
+}
+
+@layer components {
+  /* Material-style cards */
+  .m3-card {
+    @apply bg-surface border border-outline rounded-xl shadow-sm transition-all duration-200 overflow-hidden;
+  }
+  
+  .m3-card-elevated {
+    @apply bg-surface rounded-xl shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)] transition-all duration-200 hover:shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_4px_8px_3px_rgba(60,64,67,0.15)];
+  }
+
+  /* Linear Loading State */
+  .linear-progress {
+    @apply h-1 w-full bg-surface-container-high overflow-hidden relative;
+  }
+  
+  .linear-progress-bar {
+    @apply absolute inset-0 bg-google-blue origin-left animate-loading;
+  }
+}
+
+/* Custom Scrollbar for a Google-y feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #DEE1E6;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #BDC1C6;
+}
