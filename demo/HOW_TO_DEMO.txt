@@ -19,8 +19,8 @@ WHAT'S IN THIS FOLDER
 BEFORE THE DEMO (do this once, 5 minutes)
 -----------------------------------------
 1. Chrome -> chrome://extensions -> turn on "Developer mode" -> "Load unpacked" ->
-   choose the lexguard_001-main\extension folder. (Already loaded? Click the reload button.)
-   Check the version says 0.5.1.
+   choose the LexGuard-main\extension folder. (Already loaded? Click the reload button.)
+   Check the version says 0.6.0.
 2. On the LEXGUARD card click "Details" and turn ON "Allow access to file URLs".
    (Needed only for 5_StreamNest_Signup_Page.html, because it opens from your computer.)
 3. Click the puzzle-piece icon in Chrome's toolbar and PIN LEXGUARD, so its blue shield is visible.
@@ -85,6 +85,8 @@ STEP 5 - Proof it doesn't just shout at everything  (~30 s)
          score drops to 2. It isn't a keyword alarm."
 
 OPTIONAL EXTRAS (if you have time or judges ask)
+  - Ask LEXGUARD (below the score): try "Should I sign this?" or "Can I leave early?" - answers quote the
+    sentence and link to it. No AI service: answers come from the report and the rules.
   - Select one sentence on any page -> right-click -> "Check selected text with LEXGUARD".
   - Click the sun/moon button (top right of the panel) to switch light/dark.
   - Upload 3_Freelance_Quotation.pdf (freelancers) or 4_Concert_Ticket_Terms.pdf (consumers).
@@ -105,7 +107,7 @@ ONE-LINE ANSWERS FOR JUDGES
 ---------------------------
 Is it AI?            Four agents (Extractor, Risk Finder, Defender, Judge) working on 32 rules,
                      so it's fast, explainable and private. An optional AI layer is next.
-Accuracy?            On public data it catches 74% of unfair website terms (UNFAIR-ToS) and 60%
+Accuracy?            On public data it catches 74% of unfair website terms (UNFAIR-ToS) and 59%
                      of business-contract risks (CUAD). Only 3% of fair sentences are wrongly marked HIGH.
 Privacy?             Runs inside the browser. No server, no upload, no AI service.
 Why not ChatGPT?     Chatbots can invent things and need your document uploaded. LEXGUARD always

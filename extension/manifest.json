@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LEXGUARD",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "See the risky sentence before you sign. Checks terms, offer letters and quotations inside your browser.",
   "permissions": ["activeTab", "scripting", "contextMenus", "sidePanel", "storage"],
   "optional_host_permissions": ["https://*/*", "http://*/*"],

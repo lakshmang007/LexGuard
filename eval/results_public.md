@@ -9,7 +9,7 @@
 | F1 | 0.642 |
 | Fair sentences flagged at any level | 6.9% |
 | Fair sentences flagged HIGH | 3.0% |
-| Speed | 0.72 ms per sentence |
+| Speed | 0.68 ms per sentence |
 
 | Unfair type | Sentences | Caught by the matching rule |
 |---|---|---|
