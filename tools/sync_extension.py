@@ -19,6 +19,7 @@ COPIES = {
     ROOT / "web" / "style.css": EXT / "style.css",
     ROOT / "web" / "motion.js": EXT / "motion.js",
     ROOT / "web" / "theme.js": EXT / "theme.js",
+    ROOT / "web" / "chat.js": EXT / "chat.js",
 }
 
 

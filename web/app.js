@@ -1,5 +1,7 @@
 const $ = (id) => document.getElementById(id);
 let result = null;
+const chat = LexChat.mount($("chat"), () => result);
+LexChat.loadRules("/extension/rules.json");
 
 function showError(msg) {
   $("err").innerHTML = msg ? `<div class="error">${LexReport.esc(msg)}</div>` : "";
@@ -51,6 +53,7 @@ async function analyze() {
     if (!res.ok) throw new Error(data.error || res.statusText);
     result = data;
     render();
+    chat.reset();
   } catch (err) {
     showError(`Could not check the document: ${err.message}`);
   } finally {

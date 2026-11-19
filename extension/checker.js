@@ -1,6 +1,8 @@
 // Full checker page inside the extension: paste, sample or upload (.txt / .pdf), all offline.
 const $ = (id) => document.getElementById(id);
 let result = null;
+const chat = LexChat.mount($("chat"), () => result);
+LexChat.loadRules("rules.json");
 
 if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "vendor/pdf.worker.min.js";
 
@@ -52,6 +54,7 @@ async function analyze() {
     await LexEngine.loadRules();
     result = LexEngine.analyze(text, $("doctype").value || null);
     render();
+    chat.reset();
   } catch (err) {
     showError(`Could not check the document: ${err.message}`);
   }

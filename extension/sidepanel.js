@@ -1,5 +1,7 @@
 const $ = (id) => document.getElementById(id);
 let result = null;
+const chat = LexChat.mount($("chat"), () => result);
+LexChat.loadRules("rules.json");
 let tabId = null;
 
 function showError(msg) {
@@ -61,6 +63,7 @@ async function run(mode, allowed = Promise.resolve(true)) {
     await chrome.scripting.executeScript({ target: { tabId }, files: ["content.js"] });
     const marked = await chrome.tabs.sendMessage(tabId, { type: "highlight", flags: result.flags });
     render(marked);
+    chat.reset();
   } catch (err) {
     showError(`Could not check the page: ${err.message}`);
   }
