@@ -1,0 +1,12 @@
+/* In-page highlights in Google colours: red = HIGH, yellow = MEDIUM, grey = LOW, blue flash on focus. */
+mark.lexguard { color: inherit !important; border-radius: 3px !important; padding: 1px 0 !important; cursor: pointer !important; scroll-margin: 120px; }
+mark.lexguard-high { background: rgba(234, 67, 53, 0.22) !important; box-shadow: inset 0 -2px 0 #ea4335 !important; }
+mark.lexguard-med { background: rgba(251, 188, 5, 0.3) !important; box-shadow: inset 0 -2px 0 #f9ab00 !important; }
+mark.lexguard-low { background: rgba(154, 160, 166, 0.25) !important; }
+@keyframes lexguard-flash { 0%, 100% { outline-color: transparent; } 30%, 70% { outline-color: #4285f4; } }
+mark.lexguard-flash { outline: 3px solid transparent; outline-offset: 2px; animation: lexguard-flash 1.4s ease 1; }
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes lexguard-in { from { background-color: transparent; } }
+  mark.lexguard { animation: lexguard-in .6s ease-out both; }
+  mark.lexguard-flash { animation: lexguard-flash 1.4s ease 1; }
+}

@@ -1,0 +1,115 @@
+LEXGUARD DEMO GUIDE  (Team Root Coders, HACKNOVA-26)
+====================================================
+
+All sample documents in this folder are SYNTHETIC: no real company, person or contract.
+
+WHAT'S IN THIS FOLDER
+---------------------
+1_Risky_Offer_Letter.pdf / .txt    Offer letter with a Rs. 2 lakh bond, withheld certificates,
+                                   pay changed at "sole discretion"...      expected: 81/100 HIGH
+2_Fair_Offer_Letter.pdf / .txt     The same kind of letter, written fairly.   expected:  2/100 LOW
+3_Freelance_Quotation.pdf / .txt   Website-design quote: 100% advance, non-refundable,
+                                   GST extra...                               expected: 62/100 HIGH
+4_Concert_Ticket_Terms.pdf / .txt  Ticket terms: no refunds, line-up can change,
+                                   data shared with sponsors...               expected: 57/100 HIGH
+5_StreamNest_Signup_Page.html      A fake subscription signup page for the extension demo.
+                                                                              expected: 76/100 HIGH
+
+
+BEFORE THE DEMO (do this once, 5 minutes)
+-----------------------------------------
+1. Chrome -> chrome://extensions -> turn on "Developer mode" -> "Load unpacked" ->
+   choose the lexguard_001-main\extension folder. (Already loaded? Click the reload button.)
+   Check the version says 0.5.1.
+2. On the LEXGUARD card click "Details" and turn ON "Allow access to file URLs".
+   (Needed only for 5_StreamNest_Signup_Page.html, because it opens from your computer.)
+3. Click the puzzle-piece icon in Chrome's toolbar and PIN LEXGUARD, so its blue shield is visible.
+4. Open these tabs, left to right:
+     Tab 1: 5_StreamNest_Signup_Page.html (drag it into Chrome)
+     Tab 2: https://razorpay.com/terms/
+     Tab 3: https://www.spotify.com/in-en/legal/end-user-agreement/   (backup real site)
+5. Do one practice run on Tab 1 and click "Allow" when Chrome asks for page access.
+   After that it will not ask again during the demo.
+6. Keep the slides open in another window as a backup.
+   LEXGUARD works offline, so Wi-Fi is only needed for the real websites in Tabs 2 and 3.
+
+
+THE DEMO (about 4 minutes)
+--------------------------
+
+STEP 1 - The problem on a real-looking signup page  (Tab 1, ~60 s)
+  Do:   Click the LEXGUARD shield -> the side panel opens -> click "Check this page".
+  See:  Risky sentences turn red (serious) and yellow (medium) on the page itself.
+        Score ring: 76/100 HIGH RISK.
+        "These terms have 4 serious kinds of risk and 3 more worth checking."
+  Say:  "Before I click 'I agree', LEXGUARD reads the terms for me. Red means serious, yellow
+         means worth checking. The sentence about my two screens is not highlighted, because
+         it's harmless."
+  Do:   Click the "Non-refundable payment" card in the panel -> the page jumps to that
+        sentence and flashes it. Click a highlight on the page -> the panel jumps to its card.
+
+STEP 2 - Why this score?  (same tab, ~30 s)
+  Do:   Click "How was this score worked out?" under the verdict.
+  See:  A table: each kind of risk, its level and its points (HIGH +15, MEDIUM +5, LOW +1).
+  Say:  "The score is explainable. Each kind of risk counts once, so long documents aren't
+         punished for being long."
+
+STEP 3 - A real website  (Tab 2, Razorpay terms, ~60 s)
+  Do:   Click "Check this page".
+  See:  About 59/100 HIGH RISK (the live page can differ slightly from our tests).
+        "What is this?" says these are the rules you agree to on razorpay.com, between you and
+        Razorpay Payments Private Limited, about 30,000 words, about 2.5 hours to read.
+        Topics in simple words, each marked with its risks or "looks OK".
+  Say:  "This is a real 30,000-word document, almost two and a half hours of reading.
+         LEXGUARD checks it in about a tenth of a second, inside the browser. Nothing is uploaded."
+  Do:   Scroll to "How LEXGUARD checked this" -> open "Not a risk for you".
+  Say:  "Our Defender checks WHO a sentence affects. 'You may opt for extra services' is your
+         choice, not a risk, so it isn't counted. Only risks that fall on the user are shown."
+
+STEP 4 - An offer letter PDF, with Indian rules  (~60 s)
+  Do:   In the side panel click "Paste or upload a document (.txt / .pdf)" -> a checker tab opens
+        -> "Upload .txt / .pdf" -> choose 1_Risky_Offer_Letter.pdf.
+  See:  81/100 HIGH. Cards tagged "India rule": the service bond, original certificates kept,
+        salary withheld, the non-compete.
+  Do:   Open "See details" on the bond card.
+  Say:  "It quotes the exact sentence, explains it in plain words, gives a question to ask HR,
+         and suggests fairer wording, here a pro-rata bond. Indian courts usually allow only
+         reasonable compensation, and LEXGUARD tells you that."
+  Do:   Click "Copy clarification email" and paste it into Notepad: a ready email to HR.
+
+STEP 5 - Proof it doesn't just shout at everything  (~30 s)
+  Do:   Upload 2_Fair_Offer_Letter.pdf.
+  See:  2/100 LOW RISK.
+  Say:  "Same kind of letter, written fairly: pay changes need my consent, notice is the same
+         for both sides, certificates are returned. The Defender finds these protections, so the
+         score drops to 2. It isn't a keyword alarm."
+
+OPTIONAL EXTRAS (if you have time or judges ask)
+  - Select one sentence on any page -> right-click -> "Check selected text with LEXGUARD".
+  - Click the sun/moon button (top right of the panel) to switch light/dark.
+  - Upload 3_Freelance_Quotation.pdf (freelancers) or 4_Concert_Ticket_Terms.pdf (consumers).
+  - "Save report as PDF" in the checker tab prints the full report.
+
+
+IF SOMETHING GOES WRONG
+-----------------------
+- "LEXGUARD can't read this tab": refresh the page and click "Check this page" again.
+  On the local signup page, check that "Allow access to file URLs" is ON.
+- "LEXGUARD needs your permission": click "Check this page" again and choose "Allow".
+- No internet: skip Step 3 and use Steps 1, 4 and 5. They work fully offline.
+- Chrome's built-in PDF viewer can't be read by extensions. Always upload PDFs in the checker tab.
+- Anything else: show slides 4 and 5 (screenshots) and continue.
+
+
+ONE-LINE ANSWERS FOR JUDGES
+---------------------------
+Is it AI?            Four agents (Extractor, Risk Finder, Defender, Judge) working on 32 rules,
+                     so it's fast, explainable and private. An optional AI layer is next.
+Accuracy?            On public data it catches 74% of unfair website terms (UNFAIR-ToS) and 60%
+                     of business-contract risks (CUAD). Only 3% of fair sentences are wrongly marked HIGH.
+Privacy?             Runs inside the browser. No server, no upload, no AI service.
+Why not ChatGPT?     Chatbots can invent things and need your document uploaded. LEXGUARD always
+                     quotes the exact sentence and checks protections before warning.
+Is it legal advice?  No, it's a review aid that tells you what to ask before signing.
+
+LEXGUARD_Demo_Video.mp4 is a 90-second silent screen recording of these steps with captions, to play while you talk.

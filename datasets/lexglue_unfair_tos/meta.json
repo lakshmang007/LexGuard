@@ -1,0 +1,21 @@
+{
+  "labels": [
+    "Limitation of liability",
+    "Unilateral termination",
+    "Unilateral change",
+    "Content removal",
+    "Contract by using",
+    "Choice of law",
+    "Jurisdiction",
+    "Arbitration"
+  ],
+  "splits": {
+    "train": 5532,
+    "validation": 2275,
+    "test": 1607
+  },
+  "source": "LexGLUE unfair_tos (Chalkidis et al., 2022), from Lippi et al. (2019) CLAUDETTE corpus",
+  "url": "https://huggingface.co/datasets/coastalcph/lex_glue",
+  "license": "CC BY 4.0",
+  "note": "Labels are clause-type names. Text is lower-cased and tokenised as in the original release."
+}

@@ -1,0 +1,858 @@
+{
+  "version": "0.1.0",
+  "levels": {
+    "HIGH": 0.7,
+    "MEDIUM": 0.4
+  },
+  "risks": [
+    {
+      "id": "pay_change",
+      "name": "Pay can be changed one-sided",
+      "doc_types": [
+        "offer_letter"
+      ],
+      "weight": 0.9,
+      "patterns": [
+        "\\b(revise|change|modify|reduce|alter|vary|restructure)\\b[^.;]{0,50}\\b(compensation|salary|pay|ctc|remuneration|incentives?|bonus|stipend)\\b",
+        "\\b(compensation|salary|pay|ctc|remuneration|stipend)\\b[^.;]{0,60}\\b(sole|absolute) discretion\\b"
+      ],
+      "topic": "compensation|salary|\\bpay\\b|ctc|remuneration|stipend",
+      "protections": [
+        "mutual_consent",
+        "written_notice"
+      ],
+      "reason": "Your pay can change without your agreement.",
+      "question": "Will any change to my pay need my written consent?",
+      "safer_wording": "Any change to compensation will be made only with the Employee's prior written consent."
+    },
+    {
+      "id": "unilateral_change",
+      "name": "Terms can be changed one-sided",
+      "doc_types": [
+        "all"
+      ],
+      "weight": 0.7,
+      "patterns": [
+        "\\b(reserves? the right|may|can|is entitled|shall be entitled)\\b[^.;]{0,50}\\b(to )?(revise|change|modify|amend|alter|vary|update|discontinue|eliminate|restrict|limit|manage|regulate|assign)\\b",
+        "\\bat (its|our|the company's|the provider's) (sole|absolute|own) discretion\\b",
+        "\\b(changes?|modifications?|amendments?|updates?|revisions?)\\b[^.;]{0,60}\\b(effective|binding)\\b[^.;]{0,30}\\b(when|upon|immediately|once|as soon as)\\b[^.;]{0,10}\\b(posted|published|made)\\b",
+        "\\b(check|review|look at|visit)\\b[^.;]{0,30}\\b(terms|agreement|page|policy|version)\\b[^.;]{0,30}\\b(regularly|periodically|from time to time|frequently)\\b",
+        "\\b(we|company)\\b[^.;]{0,20}\\b(may|can|will)\\b[^.;]{0,30}\\b(make )?changes?\\b[^.;]{0,30}\\b(terms|agreement|policy|services?)\\b"
+      ],
+      "boost_patterns": [
+        "without (any )?(prior )?notice",
+        "at any time"
+      ],
+      "protections": [
+        "written_notice",
+        "mutual_consent"
+      ],
+      "reason": "The other side can change the deal later without asking you.",
+      "question": "Will I be told in writing before any change, and can I exit without penalty if I disagree?",
+      "safer_wording": "Any change to these terms will be notified in writing at least 30 days in advance, and the other party may terminate without penalty if they do not accept it.",
+      "exclude_patterns": [
+        "\\byou (may|can) (change|update|modify)"
+      ]
+    },
+    {
+      "id": "termination_without_notice",
+      "name": "Termination without notice",
+      "doc_types": [
+        "all"
+      ],
+      "weight": 0.85,
+      "patterns": [
+        "\\bterminat\\w*[^.;]{0,60}\\bwithout (any )?(prior )?(notice|reason|cause|assigning any reason)",
+        "\\b(suspend|terminate|deactivate)\\b[^.;]{0,30}\\b(your )?(account|access|services?|employment)\\b[^.;]{0,40}\\b(at any time|at (its|our) (sole )?discretion)",
+        "\\b(we|company|reserves? the right|right to|may|will be|can)\\b[^.;]{0,60}\\b(terminat|suspend|deactivat|disabl|cancel|clos|block|restrict|limit)\\w*\\b[^.;]{0,30}\\b(your|any|the user'?s?|user)\\b[^.;]{0,20}\\b(account|access|use|membership|subscription|profile|services?)\\b",
+        "\\b(result in|lead to|grounds for)\\b[^.;]{0,25}\\b(the )?(immediate )?(termination|suspension|cancellation|deactivation)\\b",
+        "\\b(account|access|membership|subscription)\\b[^.;]{0,20}\\b(will|may|can) be (terminated|suspended|cancelled|canceled|closed|deactivated)\\b",
+        "\\b(may|reserves? the right|right to|discretion)\\b[^.;]{0,80}\\b(suspend|stop providing|discontinue|withdraw|disable|deactivate)\\w*\\b",
+        "\\bwithdrawal of your right to use\\b"
+      ],
+      "protections": [
+        "termination_cause",
+        "written_notice"
+      ],
+      "reason": "You can be let go or cut off immediately, with no time to prepare.",
+      "question": "What notice or compensation will I get if this is terminated, and for what reasons?",
+      "safer_wording": "Either party may terminate this agreement with 30 days' written notice, or immediately only for material breach after a written warning.",
+      "exclude_patterns": [
+        "\\byou (may|can|are free to) (terminate|cancel|close|delete|deactivate)",
+        "\\byou (may|can) (discontinue|stop|withdraw)"
+      ]
+    },
+    {
+      "id": "service_bond",
+      "name": "Service bond / exit penalty",
+      "doc_types": [
+        "offer_letter"
+      ],
+      "jurisdiction": "IN",
+      "weight": 0.85,
+      "patterns": [
+        "\\b(service )?bond\\b",
+        "\\bliquidated damages\\b",
+        "\\b(pay|reimburse|repay|refund)\\b[^.;]{0,50}\\b(training|recruitment|bond|relocation) (cost|costs|expenses|amount)\\b",
+        "\\bminimum (service )?period of\\b"
+      ],
+      "protections": [
+        "pro_rata"
+      ],
+      "reason": "You may owe a large fixed penalty if you leave early. Indian courts usually allow only reasonable, proven compensation (Indian Contract Act, s.74), but you can still be pressured or sued.",
+      "question": "Is the bond amount reduced pro-rata for time served, and what exact costs does it cover?",
+      "safer_wording": "If the Employee leaves within 12 months, they will reimburse actual documented training costs, reduced pro-rata for each month served."
+    },
+    {
+      "id": "withhold_documents",
+      "name": "Salary or documents can be withheld",
+      "doc_types": [
+        "offer_letter"
+      ],
+      "jurisdiction": "IN",
+      "weight": 0.9,
+      "patterns": [
+        "\\bwithh(o|e)ld\\w*\\b[^.;]{0,50}\\b(salary|dues|full and final|settlement|relieving|experience letter|documents|certificates)\\b",
+        "\\b(retain|keep|deposit|submit)\\b[^.;]{0,30}\\boriginal (certificates|documents|mark ?sheets)\\b"
+      ],
+      "protections": [],
+      "reason": "Your final pay or certificates could be held back to stop you leaving.",
+      "question": "Under what exact conditions can my salary or documents be withheld, and for how long?",
+      "safer_wording": "Full and final settlement and relieving documents will be issued within 30 days of the last working day. Original certificates will be verified and returned the same day."
+    },
+    {
+      "id": "long_notice_period",
+      "name": "Long notice period",
+      "doc_types": [
+        "offer_letter"
+      ],
+      "jurisdiction": "IN",
+      "weight": 0.55,
+      "patterns": [
+        "\\bnotice period of\\b[^.;]{0,15}\\b(60|75|90|120|180|two|three|four|six|2|3|4|6) (calendar )?(days|months)\\b",
+        "\\b(60|75|90|120|180|two|three|four|six|2|3|4|6) (calendar )?(days|months)'?’? notice\\b"
+      ],
+      "protections": [
+        "notice_buyout"
+      ],
+      "reason": "A long notice period can make it hard to join a new job quickly.",
+      "question": "Is the notice period the same for both sides, and can I buy it out or have it waived?",
+      "safer_wording": "Either party may end employment with 30 days' written notice. The Employee may pay salary in lieu of any unserved notice."
+    },
+    {
+      "id": "non_compete",
+      "name": "Non-compete after leaving",
+      "doc_types": [
+        "all"
+      ],
+      "jurisdiction": "IN",
+      "weight": 0.65,
+      "patterns": [
+        "\\bnon[- ]?compet\\w*\\b",
+        "\\bshall not\\b[^.;]{0,30}\\b(join|work for|be employed|engage|provide services)\\b[^.;]{0,60}\\b(competitor|competing|similar business|clients?)\\b",
+        "^(?=.*\\b(?:not|no|neither|refrain|prohibit\\w*|restrict\\w*|exclusive\\w*)\\b).*\\b(compete|competing|(competitive|in competition) with|competitive (products?|services?|business(es)?|compan(y|ies))|competitors?|(substantially )?similar (products?|services?|business(es)?|companies))\\b",
+        "\\bcovenants?\\b[^.;]{0,60}\\bnot\\b[^.;]{0,60}\\b(engage|own|operate|manage|be employed|provide services)\\b",
+        "\\b(during|throughout) the term\\b[^.;]{0,200}\\b(shall not|will not|not to|neither)\\b[^.;]{0,100}\\b(sell|market|promote|distribute|engage|offer|develop|license|enfranchise|operate)\\b"
+      ],
+      "protections": [],
+      "reason": "Limits where you can work next. Post-employment non-competes are generally void in India (Indian Contract Act, s.27), but can still be used to pressure you.",
+      "question": "Can this restriction be limited to not using confidential information, rather than not working in the field?",
+      "safer_wording": "After leaving, the Employee will not use or disclose the Company's confidential information. No other restriction on future employment applies.",
+      "exclude_patterns": [
+        "\\bcompetitive advantage\\b"
+      ]
+    },
+    {
+      "id": "probation_extension",
+      "name": "Probation can be extended at will",
+      "doc_types": [
+        "offer_letter"
+      ],
+      "weight": 0.45,
+      "patterns": [
+        "\\bprobation\\b[^.;]{0,60}\\bextend\\w*\\b",
+        "\\bextend\\w*\\b[^.;]{0,30}\\bprobation\\b"
+      ],
+      "protections": [
+        "written_notice"
+      ],
+      "reason": "Your probation, with weaker job security, could be stretched out.",
+      "question": "What is the maximum probation length, and how will I be told if it is extended?",
+      "safer_wording": "Probation may be extended once, by up to 3 months, with written reasons given before the original period ends."
+    },
+    {
+      "id": "transfer_anywhere",
+      "name": "Transfer to any location",
+      "doc_types": [
+        "offer_letter"
+      ],
+      "weight": 0.4,
+      "patterns": [
+        "\\btransferr?\\w*\\b[^.;]{0,50}\\b(any (location|place|city|branch|office|site)|anywhere)\\b"
+      ],
+      "protections": [
+        "mutual_consent"
+      ],
+      "reason": "You could be moved to another city without a say.",
+      "question": "Will any transfer need my consent, and will relocation costs be covered?",
+      "safer_wording": "Any transfer outside the current city will be made only with the Employee's consent, and reasonable relocation costs will be paid."
+    },
+    {
+      "id": "ip_overreach",
+      "name": "Owns work done outside job",
+      "doc_types": [
+        "offer_letter",
+        "quotation"
+      ],
+      "weight": 0.6,
+      "patterns": [
+        "\\b(whether or not|outside|beyond)\\b[^.;]{0,20}\\b(during )?(working hours|office hours|the scope of employment)\\b",
+        "\\ball (inventions|intellectual property|work product|ideas)\\b[^.;]{0,80}\\b(conceived|created|developed)\\b[^.;]{0,40}\\b(at any time|whether or not)\\b"
+      ],
+      "protections": [],
+      "reason": "The other side may claim ownership of your personal projects too.",
+      "question": "Can ownership be limited to work done for this job, using company time or resources?",
+      "safer_wording": "The Company owns work created in the course of employment or using Company resources. Personal projects made outside working hours remain the Employee's.",
+      "exclude_patterns": [
+        "\\bremains?\\s+(?:yours|with you|the (?:employee|consultant|creator)['’]?s?)\\b",
+        "\\bbelongs?\\s+to you\\b"
+      ]
+    },
+    {
+      "id": "waiver_of_claims",
+      "name": "You give up the right to claim",
+      "doc_types": [
+        "all"
+      ],
+      "weight": 0.8,
+      "patterns": [
+        "\\bwaive\\w*\\b[^.;]{0,40}\\b(right|claim|claims|remedy|remedies)\\b",
+        "\\b(shall|will) not be entitled to (claim|any (compensation|damages|refund))",
+        "\\bno claims?\\b[^.;]{0,20}\\b(shall|will|can|may) be (entertained|made|raised|accepted)",
+        "\\b(release|discharge)s?\\b[^.;]{0,30}\\bfrom (any and all|all|any) (claims|liability)\\b"
+      ],
+      "protections": [
+        "consumer_rights"
+      ],
+      "reason": "You give up your right to claim damages even if they are at fault.",
+      "question": "Does this still let me claim if the other side is negligent or breaks the agreement?",
+      "safer_wording": "Nothing in this agreement limits either party's right to claim for the other's negligence, breach or fraud, or any statutory rights."
+    },
+    {
+      "id": "limitation_of_liability",
+      "name": "Their liability is limited",
+      "doc_types": [
+        "all"
+      ],
+      "weight": 0.55,
+      "patterns": [
+        "\\b(not|in no event|under no circumstances)\\b[^.;]{0,30}\\b(be )?(liable|responsible)\\b[^.;]{0,15}\\bfor (any|all)\\b",
+        "\\bliability\\b[^.;]{0,30}\\b(shall|will) (not exceed|be limited)\\b",
+        "\\b(takes?|accepts?|assumes?|bears?) no (responsibility|liability)\\b",
+        "\\b(will|shall|is|are) not be (held )?(liable|responsible)\\b",
+        "\\bnot (be )?(held )?(liable|responsible)\\b",
+        "\\bliability\\b[^.;]{0,150}\\b(not exceed|limited to|be limited)\\b",
+        "\\b(without|disclaims?|excludes?)\\b[^.;]{0,20}\\b(any |all )?(liability|responsibility)\\b",
+        "\\bno (responsibility|liability)\\b",
+        "\\b(sole|exclusive) (and exclusive )?(remedy|remedies|recourse)\\b",
+        "\\b(liable|liability|damages)\\b[^.;]{0,150}\\b(consequential|incidental|indirect|special|punitive|exemplary|lost profits|loss of profits)\\b",
+        "\\b(maximum|aggregate|total|cumulative|entire) (aggregate )?liability\\b",
+        "\\bliability cap\\b",
+        "\\b(neither party|in no event|under no circumstances)\\b[^.;]{0,80}\\bliable\\b"
+      ],
+      "protections": [
+        "liability_carveout",
+        "consumer_rights"
+      ],
+      "reason": "If something goes wrong, the other side may pay little or nothing.",
+      "question": "Is there an exception for negligence, fraud or failure to deliver?",
+      "safer_wording": "Liability is limited to the amount paid, except for loss caused by negligence, wilful misconduct, fraud or failure to deliver.",
+      "exclude_patterns": [
+        "\\byou (will|shall|are|may) be (held )?(liable|responsible)\\b",
+        "\\bnothing in\\b[^.;]{0,40}\\b(exclude|limit)s?\\b"
+      ]
+    },
+    {
+      "id": "delay_no_liability",
+      "name": "No responsibility for delays",
+      "doc_types": [
+        "quotation",
+        "ticket"
+      ],
+      "weight": 0.6,
+      "patterns": [
+        "\\bnot (be )?(liable|responsible)\\b[^.;]{0,20}\\bfor (any )?delays?\\b",
+        "\\b(delivery|completion|timelines?|dates?)\\b[^.;]{0,20}\\b(are|is) (only )?(indicative|approximate|estimates?|tentative)\\b"
+      ],
+      "protections": [
+        "delay_remedy"
+      ],
+      "reason": "Deadlines may not be binding, with no remedy for late delivery.",
+      "question": "What happens, such as a discount or a right to cancel, if delivery is late?",
+      "safer_wording": "If delivery is more than 7 days late for reasons within the Provider's control, the Client may cancel with a full refund or receive a 5% discount per week of delay."
+    },
+    {
+      "id": "non_refundable",
+      "name": "Non-refundable payment",
+      "doc_types": [
+        "all"
+      ],
+      "weight": 0.7,
+      "patterns": [
+        "\\bnon[- ]?refundable\\b",
+        "\\bno refunds?\\b",
+        "\\b(will|shall) not be refunded\\b",
+        "\\bforfeit\\w*\\b"
+      ],
+      "protections": [
+        "refund_window",
+        "provider_cancel_refund"
+      ],
+      "reason": "You may lose your money even if you cancel early or the service changes.",
+      "question": "Will I get a refund if the other side cancels or changes the service, or if I cancel early?",
+      "safer_wording": "A full refund will be given if the Provider cancels or materially changes the service, and a partial refund for cancellations made at least 7 days in advance."
+    },
+    {
+      "id": "hidden_fees",
+      "name": "Extra or unclear fees",
+      "doc_types": [
+        "all"
+      ],
+      "weight": 0.55,
+      "patterns": [
+        "\\b(additional|extra|convenience|processing|service|handling|internet handling|platform) (charges?|fees?)\\b",
+        "\\b(charges?|fees?|taxes)\\b[^.;]{0,10}\\bas (applicable|per actuals)\\b",
+        "\\b(plus|excluding|exclusive of) (gst|taxes|applicable taxes)\\b",
+        "\\bgst (extra|additional)\\b"
+      ],
+      "protections": [
+        "all_inclusive",
+        "fee_schedule"
+      ],
+      "reason": "The final price may be higher than quoted, because extra fees or taxes are added later.",
+      "question": "What is the full final price including all taxes and fees?",
+      "safer_wording": "The quoted price is the total payable, inclusive of GST and all fees. Any other charge needs the Client's written approval in advance."
+    },
+    {
+      "id": "price_escalation",
+      "name": "Price can increase",
+      "doc_types": [
+        "quotation",
+        "policy"
+      ],
+      "weight": 0.6,
+      "patterns": [
+        "\\b(prices?|rates?|charges|fees|quotation)\\b[^.;]{0,40}\\b(subject to (change|revision|escalation)|may (vary|increase|be revised))\\b",
+        "\\bescalation\\b"
+      ],
+      "protections": [
+        "price_lock"
+      ],
+      "reason": "The price you agreed may go up after you commit.",
+      "question": "Is this price fixed for the whole project or period?",
+      "safer_wording": "Prices are fixed for the duration of this engagement. Any increase needs the Client's written approval."
+    },
+    {
+      "id": "full_advance",
+      "name": "Large advance payment",
+      "doc_types": [
+        "quotation"
+      ],
+      "weight": 0.5,
+      "patterns": [
+        "\\b(100\\s?%|full|entire|complete) (payment|amount|fee)\\b[^.;]{0,30}\\b(in )?advance\\b",
+        "\\b([6-9]\\d)\\s?% (advance|upfront)\\b"
+      ],
+      "protections": [
+        "milestone_payment"
+      ],
+      "reason": "You pay most of the money before getting anything, which leaves you exposed.",
+      "question": "Can payment be split into milestones tied to delivery?",
+      "safer_wording": "30% advance, 40% on delivery of the first draft and 30% on final acceptance."
+    },
+    {
+      "id": "late_interest",
+      "name": "Heavy late-payment penalty",
+      "doc_types": [
+        "quotation",
+        "policy"
+      ],
+      "weight": 0.5,
+      "patterns": [
+        "\\binterest\\b[^.;]{0,30}\\b(\\d{1,2}(\\.\\d+)?\\s?% per (month|week)|[2-9]\\d\\s?% per annum)",
+        "\\blate (payment )?(fee|charge|penalty)\\b"
+      ],
+      "protections": [],
+      "reason": "A small delay in paying could cost you a lot.",
+      "question": "Can the late-payment charge be reduced and given a grace period?",
+      "safer_wording": "Invoices are payable within 15 days. Late amounts carry simple interest of 12% per annum after a 7-day grace period."
+    },
+    {
+      "id": "auto_renewal",
+      "name": "Automatic renewal",
+      "doc_types": [
+        "all"
+      ],
+      "weight": 0.6,
+      "patterns": [
+        "\\bauto(matic(ally)?)?[- ]?renew\\w*\\b",
+        "\\brenew\\w*\\b[^.;]{0,15}\\bautomatically\\b",
+        "\\bunless (you )?cancel\\w*\\b",
+        "\\bautomatic(ally)?\\b[^.;]{0,40}\\b(renew|extend|extension|continue|roll over)\\w*\\b",
+        "\\b(renewed|extended|continue|continues|roll over)\\b[^.;]{0,40}\\bautomatically\\b",
+        "\\bsuccessive\\b[^.;]{0,40}\\b(terms?|periods?|years?|months?)\\b",
+        "\\bcontinue\\w*\\b[^.;]{0,50}\\b(indefinitely|until terminated|from year to year|month to month)\\b",
+        "\\b(renew|extend)\\w*\\b[^.;]{0,80}\\b(additional|further|successive|renewal|extension) (term|period)s?\\b"
+      ],
+      "protections": [
+        "renewal_reminder",
+        "cancel_anytime"
+      ],
+      "reason": "You may keep getting charged unless you remember to cancel.",
+      "question": "Will I get a reminder before renewal, and can I cancel any time?",
+      "safer_wording": "The subscription renews only after a reminder is sent at least 7 days in advance, and it can be cancelled at any time with no charge for the following period.",
+      "exclude_patterns": [
+        "\\b(will not|won't|does not|do not|never) (automatically )?renew"
+      ]
+    },
+    {
+      "id": "provider_cancellation",
+      "name": "They can cancel or change the event",
+      "doc_types": [
+        "ticket",
+        "policy"
+      ],
+      "weight": 0.6,
+      "patterns": [
+        "\\b(reserves? the right|may|can)\\b[^.;]{0,15}\\b(to )?(cancel|reschedule|postpone|change the venue|change the line-?up|substitute)\\b"
+      ],
+      "protections": [
+        "provider_cancel_refund"
+      ],
+      "reason": "The event or service can be cancelled or changed, possibly without a refund.",
+      "question": "Do I get a full refund if the event is cancelled, postponed or materially changed?",
+      "safer_wording": "If the event is cancelled, postponed or materially changed, ticket holders may claim a full refund, including all fees, within 7 days.",
+      "exclude_patterns": [
+        "\\byou (may|can|are free to) (cancel|reschedule|postpone)"
+      ]
+    },
+    {
+      "id": "non_transferable",
+      "name": "Cannot transfer",
+      "doc_types": [
+        "ticket"
+      ],
+      "weight": 0.3,
+      "patterns": [
+        "\\bnon[- ]?transferable\\b",
+        "\\bcannot be (transferred|resold)\\b"
+      ],
+      "protections": [],
+      "reason": "If you can't attend, you can't pass it on, so the money is lost.",
+      "question": "Can I transfer the ticket to someone else or get a credit if I can't attend?",
+      "safer_wording": "Tickets may be transferred once through the official platform at no extra charge."
+    },
+    {
+      "id": "one_sided_indemnity",
+      "name": "One-sided indemnity",
+      "doc_types": [
+        "all"
+      ],
+      "weight": 0.75,
+      "patterns": [
+        "\\b(you|the employee|the client|the customer|the user|the attendee)\\b[^.;]{0,30}\\bindemnif\\w*\\b"
+      ],
+      "protections": [
+        "mutual_indemnity"
+      ],
+      "reason": "You must cover their legal costs and losses, but they don't have to cover yours.",
+      "question": "Can the indemnity be made mutual and limited to losses I actually cause?",
+      "safer_wording": "Each party will indemnify the other only for losses directly caused by its own breach or negligence."
+    },
+    {
+      "id": "data_sharing",
+      "name": "Your data is shared",
+      "doc_types": [
+        "policy",
+        "ticket",
+        "all"
+      ],
+      "weight": 0.6,
+      "patterns": [
+        "\\b(share|sell|disclose|transfer|provide)\\b[^.;]{0,40}\\b(personal (data|information)|your (data|information|details))\\b[^.;]{0,50}\\b(third[- ]part(y|ies)|partners|affiliates|advertisers|sponsors)\\b"
+      ],
+      "protections": [
+        "opt_out"
+      ],
+      "reason": "Your personal details may be passed to other companies.",
+      "question": "Which companies get my data, and can I opt out?",
+      "safer_wording": "Personal data will be shared with third parties only with the user's explicit opt-in consent, and the user may withdraw consent at any time."
+    },
+    {
+      "id": "exclusive_jurisdiction",
+      "name": "Disputes only in their city",
+      "doc_types": [
+        "all"
+      ],
+      "weight": 0.35,
+      "patterns": [
+        "\\b(exclusive|sole) jurisdiction\\b",
+        "\\bsubject to\\b[^.;]{0,25}\\bjurisdiction only\\b",
+        "\\bcourts (at|in) [A-Z][a-z]+ (alone|only|shall have)",
+        "\\b(personal|exclusive) jurisdiction\\b",
+        "\\bsubmit to the\\b[^.;]{0,40}\\bjurisdiction\\b",
+        "\\b(brought|filed|resolved|litigated|heard|commenced)\\b[^.;]{0,40}\\b(exclusively )?(in|before) (the )?\\b[^.;]{0,40}\\bcourts?\\b",
+        "\\bconsent to (the )?(venue|jurisdiction)\\b",
+        "\\bjurisdiction of the\\b[^.;]{0,50}\\bcourts\\b"
+      ],
+      "protections": [
+        "consumer_rights"
+      ],
+      "reason": "You may have to fight a dispute in a far-away city. Consumers can usually still complain where they live under the Consumer Protection Act, 2019.",
+      "question": "Can disputes also be raised where I live?",
+      "safer_wording": "Disputes may be raised in the courts or consumer commissions where either party resides."
+    },
+    {
+      "id": "mandatory_arbitration",
+      "name": "Forced arbitration",
+      "doc_types": [
+        "all"
+      ],
+      "weight": 0.45,
+      "patterns": [
+        "\\b(shall|will|must) be (referred|submitted|settled|resolved)\\b[^.;]{0,30}\\barbitrat\\w*\\b",
+        "\\bsole arbitrator\\b[^.;]{0,40}\\bappointed by\\b",
+        "\\b(binding|final and binding|individual|exclusive|personal and exclusive) arbitration\\b",
+        "\\bthrough\\b[^.;]{0,30}\\barbitration\\b",
+        "\\bclass[- ]action\\b",
+        "\\bagree to arbitrate\\b"
+      ],
+      "protections": [
+        "consumer_rights"
+      ],
+      "reason": "You may lose access to normal courts. The arbitrator could be chosen by them, and costs can be high.",
+      "question": "Who picks the arbitrator, who pays, and can I still use consumer forums or courts?",
+      "safer_wording": "Disputes may be resolved by an arbitrator jointly appointed by both parties, with costs shared equally, without affecting either party's statutory remedies."
+    },
+    {
+      "id": "contract_by_using",
+      "name": "Using it counts as agreeing",
+      "doc_types": [
+        "all"
+      ],
+      "weight": 0.45,
+      "patterns": [
+        "\\bby (using|accessing|installing|downloading|registering|visiting|browsing|clicking|continuing to use|signing up|creating an account|purchasing|making a payment)\\b[^.;]{0,200}\\b(you )?(agree|accept|consent|acknowledge|indicate|confirm)\\w*\\b",
+        "\\b(continued|continuing|further) (use|access)\\b[^.;]{0,80}\\b(constitutes?|means?|deemed|signif\\w*|indicates?|shall be)\\b[^.;]{0,40}\\b(accept|agree|consent)\\w*\\b",
+        "\\b(through|by) your use of\\b[^.;]{0,60}\\byou (consent|agree|accept)\\b",
+        "\\b(continued|continuing|further) (use|access)\\b[^.;]{0,150}\\b(constitutes?|deemed|means?|accept\\w*|agree\\w*)\\b",
+        "\\b(use of|access to|access and use of|using)\\b[^.;]{0,80}\\b(constitutes?|signif\\w*|deemed)\\b[^.;]{0,40}\\b(accept|agree)\\w*",
+        "\\bwhenever you use\\b[^.;]{0,60}\\bagree",
+        "\\byou agree to\\b[^.;]{0,80}\\bby (installing|accessing|using|registering|downloading)",
+        "\\bdeemed to have accepted\\b",
+        "\\bkeep using\\b[^.;]{0,80}\\bagree"
+      ],
+      "protections": [],
+      "reason": "Just using the service counts as agreeing, even if you never read or signed the terms, and that includes later changes.",
+      "question": "Where can I read every term I'm agreeing to by using this, and will I be told about changes?",
+      "safer_wording": "These terms apply only after the user actively accepts them, and any later change needs the user's fresh acceptance."
+    },
+    {
+      "id": "content_removal",
+      "name": "Your content can be removed",
+      "doc_types": [
+        "policy",
+        "all"
+      ],
+      "weight": 0.6,
+      "patterns": [
+        "\\b(we|company|reserves? the right|has the right|right to|at (its|our) (sole )?(discretion|judgment)|(?<!you )may)\\b[^.;]{0,50}\\b(remove|delete|disable|block|reclaim|take down|refuse to (post|display|publish)|edit|withdraw|screen)\\w*\\b[^.;]{0,60}\\b(content|account|username|posts?|photos?|virtual|materials?|data|communications?|listings?|items?|messages?)\\b",
+        "\\b(content|posts?|materials?|virtual (goods|items|money|currency))\\b[^.;]{0,40}\\b(may|will|can) be (removed|deleted|disabled|lost|forfeited|reclaimed)\\b",
+        "^(?=.*\\b(?:may|reserves?|right|discretion)\\b).*\\b(remove|reclaim|reject|refuse|disallow|reassign|eliminate|adjust)\\w*\\b[^.;]{0,60}\\b(submissions?|reviews?|usernames?|virtual|content|materials?|postings?|permalinks?|items?)\\b",
+        "\\bunder no obligation to (store|retain|publish|keep|back ?up)\\b"
+      ],
+      "exclude_patterns": [
+        "\\byou (may|can) (remove|delete|edit)"
+      ],
+      "protections": [],
+      "reason": "Your posts, files, account data or purchased items can be deleted, possibly without warning or a refund.",
+      "question": "Will I be warned and allowed to download my content before anything is removed, and is there an appeal?",
+      "safer_wording": "Content will be removed only for a stated breach, after notice to the user, with a chance to appeal and to export their data first."
+    },
+    {
+      "id": "choice_of_law",
+      "name": "A far-away law applies",
+      "doc_types": [
+        "all"
+      ],
+      "weight": 0.35,
+      "patterns": [
+        "\\b(governed by|construed (and enforced )?in accordance with|interpreted in accordance with)\\b[^.;]{0,60}\\blaws?\\b",
+        "\\blaws? of\\b[^.;]{0,80}\\b(govern|shall govern|will govern|shall apply|applies|apply)\\b",
+        "\\bwithout regard to\\b[^.;]{0,25}\\bconflicts? of laws?\\b"
+      ],
+      "exclude_patterns": [
+        "\\blaws? of (the republic of )?india\\b",
+        "\\bindian law"
+      ],
+      "protections": [
+        "consumer_rights"
+      ],
+      "reason": "The contract follows another country's or state's law, which may give you fewer protections than your local consumer law.",
+      "question": "Do my local consumer protection laws still apply to me?",
+      "safer_wording": "This agreement is governed by the laws of India, and nothing in it removes the consumer's statutory rights where they live."
+    },
+    {
+      "id": "no_challenge",
+      "name": "You can't challenge their rights",
+      "doc_types": [
+        "all"
+      ],
+      "weight": 0.45,
+      "patterns": [
+        "\\b(not|never|no)\\b[^.;]{0,100}\\b(contest|challenge|dispute|oppose|attack|impair)\\w*\\b[^.;]{0,80}\\b(validity|ownership|rights?|title|marks?|trademarks?|patents?|intellectual property|interest)\\b",
+        "\\b(not|never) (to )?(sue|bring (any )?(action|suit|claim|proceeding))\\b",
+        "\\bcovenants? not to sue\\b",
+        "\\b(shall|will) not\\b[^.;]{0,30}\\b(acquire|claim|register)\\b[^.;]{0,40}\\b(title|rights?|ownership|trademarks?|marks?)\\b"
+      ],
+      "protections": [
+        "consumer_rights"
+      ],
+      "reason": "You promise never to dispute their ownership or rights, even if you later find a real problem.",
+      "question": "Can I still challenge their rights if they turn out to be invalid or if they breach the agreement?",
+      "safer_wording": "Nothing in this agreement prevents either party from challenging the validity of the other's rights in good faith."
+    },
+    {
+      "id": "termination_for_convenience",
+      "name": "They can end it early for any reason",
+      "doc_types": [
+        "all"
+      ],
+      "weight": 0.45,
+      "patterns": [
+        "\\bterminat\\w*\\b[^.;]{0,80}\\b(for any reason|for convenience|without cause|for no reason|with or without cause|in (its|their) (sole )?discretion)\\b",
+        "\\b(may|can|right to)\\b[^.;]{0,40}\\b(terminate|end|cancel|withdraw|discontinue)\\b[^.;]{0,100}\\b(at any time|upon|on|by giving|with)\\b[^.;]{0,40}\\b(days|months|weeks)'?’? (prior |advance )?(written )?notice\\b",
+        "\\bterminat\\w*\\b[^.;]{0,30}\\b(immediately|automatically)\\b[^.;]{0,40}\\b(upon|on) (receipt|delivery|notice)\\b"
+      ],
+      "exclude_patterns": [
+        "\\byou (may|can) (terminate|cancel|end)"
+      ],
+      "protections": [
+        "written_notice"
+      ],
+      "reason": "The other side can end the deal early even if you did nothing wrong, and you may lose the work or income you planned on.",
+      "question": "How much notice and compensation do I get if they end it early without any fault on my side?",
+      "safer_wording": "Either party may terminate for convenience with at least 30 days' written notice, and fees for work already done or committed will be paid in full."
+    },
+    {
+      "id": "ip_assignment",
+      "name": "You hand over ownership of your work",
+      "doc_types": [
+        "all"
+      ],
+      "weight": 0.45,
+      "patterns": [
+        "\\b(assigns?|transfers?|conveys?|assigned|transferred)\\b[^.;]{0,80}\\b(all )?(rights?,? title,? and interest|right,? title and interest|intellectual property|ownership|copyrights?|patents?|inventions?|domain names?)\\b",
+        "\\b(shall|will) (be|become|remain|vest in)\\b[^.;]{0,20}\\b(the )?(sole and )?(exclusive )?property of\\b",
+        "\\bworks? made for hire\\b",
+        "\\b(vest|vests|vested) (solely )?in\\b[^.;]{0,40}\\b(company|client|employer|licensor|licensee)\\b"
+      ],
+      "protections": [],
+      "reason": "You give away ownership of what you create, so you may not be able to reuse or show it later.",
+      "question": "Which exact work do I hand over, when (only after full payment?), and can I keep it for my portfolio?",
+      "safer_wording": "Ownership of the final deliverables transfers to the Client after full payment. The creator keeps pre-existing tools and may show the work in a portfolio.",
+      "exclude_patterns": [
+        "\\b(does not|do not|will not|shall not) (convey|transfer|assign)\\b",
+        "\\byou retain\\b[^.;]{0,20}\\bownership\\b"
+      ]
+    },
+    {
+      "id": "exit_fee",
+      "name": "Fee or penalty for ending early",
+      "doc_types": [
+        "all"
+      ],
+      "weight": 0.6,
+      "patterns": [
+        "\\b(termination|cancellation|early termination|exit|break|pre-?closure) (fee|payment|charge|penalty|amount)\\b",
+        "\\bliquidated damages\\b",
+        "\\b(pay|payable)\\b[^.;]{0,60}\\b(remaining|unpaid|balance of)\\b[^.;]{0,60}\\b(term|contract|minimum|fees)\\b"
+      ],
+      "protections": [
+        "pro_rata"
+      ],
+      "reason": "Leaving or cancelling early costs you a fixed fee, which may be more than the loss you actually cause.",
+      "question": "How is the early-exit fee calculated, and is it capped or reduced over time?",
+      "safer_wording": "On early termination, the leaving party pays only documented costs actually incurred, capped at one month's fees."
+    }
+  ],
+  "protections": [
+    {
+      "id": "written_notice",
+      "name": "Written notice promise",
+      "reduces": 0.4,
+      "patterns": [
+        "\\b(prior )?written (notice|intimation)\\b",
+        "\\b(\\d{1,3}|seven|fifteen|thirty|sixty) days'?’? (prior |advance )?(written )?notice\\b",
+        "\\bnotified in writing\\b"
+      ]
+    },
+    {
+      "id": "mutual_consent",
+      "name": "Needs your consent",
+      "reduces": 0.55,
+      "patterns": [
+        "\\bmutual(ly)?\\b[^.;]{0,15}\\b(agree\\w*|consent|written agreement)\\b",
+        "\\bwith (your|the employee's|employee's|the client's|client's) (prior )?(written )?(consent|approval|agreement)\\b"
+      ]
+    },
+    {
+      "id": "termination_cause",
+      "name": "Termination only for cause",
+      "reduces": 0.35,
+      "patterns": [
+        "\\bfor (gross )?misconduct\\b",
+        "\\bmaterial breach\\b",
+        "\\bafter (a )?(written )?warning\\b",
+        "\\bopportunity to (be heard|respond|cure|explain)\\b"
+      ]
+    },
+    {
+      "id": "pro_rata",
+      "name": "Pro-rata reduction",
+      "reduces": 0.35,
+      "patterns": [
+        "\\bpro[- ]?rata\\b",
+        "\\bproportionate(ly)?\\b",
+        "\\breduced (proportionately|for each month)\\b"
+      ]
+    },
+    {
+      "id": "notice_buyout",
+      "name": "Notice buy-out",
+      "reduces": 0.3,
+      "patterns": [
+        "\\bbuy[- ]?out\\b",
+        "\\b(salary|pay|payment) in lieu\\b",
+        "\\bwaive\\w*\\b[^.;]{0,20}\\bnotice\\b",
+        "\\bshortfall\\b"
+      ]
+    },
+    {
+      "id": "renewal_reminder",
+      "name": "Renewal reminder",
+      "reduces": 0.3,
+      "patterns": [
+        "\\b(remind\\w*|notify|notified|notice|email)\\b[^.;]{0,40}\\bbefore\\b[^.;]{0,15}\\b(renewal|it renews|renewing)\\b"
+      ]
+    },
+    {
+      "id": "cancel_anytime",
+      "name": "Cancel any time",
+      "reduces": 0.3,
+      "patterns": [
+        "\\bcancel\\w*\\b[^.;]{0,15}\\bany ?time\\b",
+        "\\bcancel\\w*\\b[^.;]{0,40}\\bwithout (any )?(penalty|charge|fee)\\b"
+      ]
+    },
+    {
+      "id": "refund_window",
+      "name": "Refund window",
+      "reduces": 0.35,
+      "patterns": [
+        "\\b(full|partial|\\d{1,3}\\s?%) refund\\b[^.;]{0,50}\\b(within|if cancel\\w*|before|up to)\\b",
+        "\\b\\d{1,2}[- ]day (refund|money[- ]back)\\b",
+        "\\bmoney[- ]back\\b"
+      ]
+    },
+    {
+      "id": "provider_cancel_refund",
+      "name": "Refund if they cancel",
+      "reduces": 0.4,
+      "patterns": [
+        "\\b(if|in case|in the event)\\b[^.;]{0,50}\\b(cancel\\w*|postponed)\\b[^.;]{0,70}\\b(full )?refund\\w*\\b"
+      ]
+    },
+    {
+      "id": "all_inclusive",
+      "name": "All-inclusive price",
+      "reduces": 0.4,
+      "patterns": [
+        "\\b(inclusive of|including) (all )?(taxes|gst|charges|fees)\\b",
+        "\\bno (hidden|additional|extra) (charges|fees|costs)\\b"
+      ]
+    },
+    {
+      "id": "fee_schedule",
+      "name": "Fees listed up front",
+      "reduces": 0.2,
+      "patterns": [
+        "\\b(fees?|charges) (are )?(listed|shown|set out|detailed) (in|below|above)\\b",
+        "\\bannexure\\b"
+      ]
+    },
+    {
+      "id": "price_lock",
+      "name": "Price locked",
+      "reduces": 0.35,
+      "patterns": [
+        "\\b(prices?|rates?|quotation|quote)\\b[^.;]{0,30}\\b(valid|fixed|firm|locked)\\b[^.;]{0,10}\\b(for|until|till|throughout)\\b"
+      ]
+    },
+    {
+      "id": "milestone_payment",
+      "name": "Milestone payments",
+      "reduces": 0.3,
+      "patterns": [
+        "\\bmilestones?\\b",
+        "\\binstal?l?ments?\\b",
+        "\\b(balance|remaining)\\b[^.;]{0,30}\\bon (delivery|completion|acceptance)\\b"
+      ]
+    },
+    {
+      "id": "delay_remedy",
+      "name": "Remedy for delay",
+      "reduces": 0.3,
+      "patterns": [
+        "\\b(discount|credit|refund|penalty)\\b[^.;]{0,40}\\b(per (day|week)|for (each|every) (day|week)) of delay\\b",
+        "\\bif delivery is (more than )?\\d+ days late\\b"
+      ]
+    },
+    {
+      "id": "mutual_indemnity",
+      "name": "Mutual indemnity",
+      "reduces": 0.4,
+      "patterns": [
+        "\\b(each party|both parties|either party)\\b[^.;]{0,30}\\bindemnif\\w*\\b",
+        "\\bmutual(ly)? indemnif\\w*\\b"
+      ]
+    },
+    {
+      "id": "liability_carveout",
+      "name": "Exception for negligence/fraud",
+      "reduces": 0.3,
+      "patterns": [
+        "\\b(except|excluding|other than)\\b[^.;]{0,50}\\b(gross )?(negligence|wilful misconduct|fraud)\\b"
+      ]
+    },
+    {
+      "id": "consumer_rights",
+      "name": "Statutory rights kept",
+      "reduces": 0.3,
+      "patterns": [
+        "\\bconsumer (forum|commission|protection)\\b",
+        "\\bnothing\\b[^.;]{0,40}\\b(limit|affect|exclude)s?\\b[^.;]{0,20}\\b(your )?(statutory|legal) rights\\b"
+      ]
+    },
+    {
+      "id": "opt_out",
+      "name": "Opt-out or consent",
+      "reduces": 0.35,
+      "patterns": [
+        "\\bopt[- ]?(out|in)\\b",
+        "\\bwithdraw (your )?consent\\b",
+        "\\bwith your (explicit |prior )?consent\\b"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "_note": "Planted risky clauses in each synthetic sample. A clause is identified by a unique substring. Every other clause counts as clean.",
+  "offer_letter.txt": {
+    "doc_type": "offer_letter",
+    "planted": [
+      "extend the probation period",
+      "minimum service period of 24 months",
+      "liquidated damages",
+      "original certificates",
+      "revise compensation at its sole discretion",
+      "transferred to any location",
+      "notice period of 90 days",
+      "terminate your employment without notice",
+      "withhold your full and final settlement",
+      "whether or not during working hours",
+      "shall not join or work for any competitor"
+    ]
+  },
+  "quotation.txt": {
+    "doc_type": "quotation",
+    "planted": [
+      "exclusive of GST",
+      "100% payment in advance",
+      "non-refundable under any circumstances",
+      "interest at 3% per month",
+      "indicative only",
+      "Additional charges will apply",
+      "subject to revision",
+      "In no event shall PixelNest be liable",
+      "Client shall indemnify PixelNest",
+      "renewed automatically",
+      "exclusive jurisdiction"
+    ]
+  },
+  "ticket_terms.txt": {
+    "doc_type": "ticket",
+    "planted": [
+      "non-refundable and cannot be exchanged",
+      "non-transferable",
+      "convenience fee and internet handling fee",
+      "change the line-up",
+      "shall not be responsible for any loss",
+      "share your personal information",
+      "attendee shall indemnify"
+    ]
+  }
+}

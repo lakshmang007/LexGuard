@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LEXGUARD</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
+  <style>
+    body { font-size: 14px; }
+    main { padding: 12px; }
+    header.top { padding: 12px; }
+    .private { font-size: 13px; margin: 0 0 10px; padding: 8px 10px; border-radius: 8px; background: var(--ok-bg); color: var(--ok); }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .actions select, .actions .wide { grid-column: 1 / -1; }
+    .summary { padding: 12px; gap: 12px; }
+    .score .num { font-size: 32px; }
+    .verdict { font-size: 15px; }
+    .card dl { grid-template-columns: 1fr; }
+    .links { margin-top: 12px; font-size: 13px; }
+    .links ul { padding-left: 18px; margin: 4px 0; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <h1 class="brand" aria-label="LEXGUARD"><span>L</span><span>E</span><span>X</span><span>G</span><span>U</span><span>A</span><span>R</span><span>D</span></h1>
+    <span class="tag-line">See the risky sentence before you sign.</span>
+  </header>
+  <main>
+    <p class="private">Works inside your browser. Nothing you check is uploaded.</p>
+    <div class="actions">
+      <button id="page" class="primary">Check this page</button>
+      <button id="sel">Check selected text</button>
+      <select id="doctype" aria-label="Document type">
+        <option value="">Detect document type</option>
+        <option value="offer_letter">Offer letter</option>
+        <option value="quotation">Quotation / service agreement</option>
+        <option value="ticket">Ticket terms</option>
+        <option value="policy">Online policy / subscription</option>
+      </select>
+      <button id="full" class="wide">Paste or upload a document (.txt / .pdf)</button>
+    </div>
+    <div id="err"></div>
+    <div id="links" class="links"></div>
+    <section id="out" hidden>
+      <div id="summary"></div>
+      <div class="toolbar">
+        <button id="copy">Copy clarification email</button>
+        <button id="clear">Clear highlights</button>
+      </div>
+      <div id="note" class="hint"></div>
+      <div id="cards" class="cards"></div>
+    </section>
+  </main>
+  <footer>A review aid, not legal advice. Team Root Coders.</footer>
+  <script src="engine.js"></script>
+  <script src="report.js"></script>
+  <script src="sidepanel.js"></script>
+  <script src="motion.js"></script>
+</body>
+</html>

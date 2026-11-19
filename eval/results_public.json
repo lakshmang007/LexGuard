@@ -1,0 +1,259 @@
+{
+  "unfair_tos": {
+    "dataset": "LexGLUE UNFAIR-ToS",
+    "split": "test",
+    "sentences": 1607,
+    "unfair_sentences": 172,
+    "fair_sentences": 1435,
+    "binary": {
+      "precision": 0.564,
+      "recall": 0.744,
+      "f1": 0.642,
+      "fair_flagged_any": 0.069,
+      "fair_flagged_high": 0.03
+    },
+    "per_label": {
+      "Arbitration": {
+        "total": 7,
+        "any_flag": 6,
+        "right_rule": 6,
+        "recall_right_rule": 0.857
+      },
+      "Choice of law": {
+        "total": 13,
+        "any_flag": 11,
+        "right_rule": 11,
+        "recall_right_rule": 0.846
+      },
+      "Content removal": {
+        "total": 13,
+        "any_flag": 11,
+        "right_rule": 11,
+        "recall_right_rule": 0.846
+      },
+      "Contract by using": {
+        "total": 23,
+        "any_flag": 16,
+        "right_rule": 16,
+        "recall_right_rule": 0.696
+      },
+      "Jurisdiction": {
+        "total": 16,
+        "any_flag": 11,
+        "right_rule": 11,
+        "recall_right_rule": 0.688
+      },
+      "Limitation of liability": {
+        "total": 38,
+        "any_flag": 32,
+        "right_rule": 31,
+        "recall_right_rule": 0.816
+      },
+      "Unilateral change": {
+        "total": 38,
+        "any_flag": 25,
+        "right_rule": 23,
+        "recall_right_rule": 0.605
+      },
+      "Unilateral termination": {
+        "total": 38,
+        "any_flag": 27,
+        "right_rule": 25,
+        "recall_right_rule": 0.658
+      }
+    },
+    "top_false_positive_rules": [
+      [
+        "limitation_of_liability",
+        20
+      ],
+      [
+        "unilateral_change",
+        15
+      ],
+      [
+        "termination_without_notice",
+        10
+      ],
+      [
+        "waiver_of_claims",
+        10
+      ],
+      [
+        "auto_renewal",
+        8
+      ],
+      [
+        "content_removal",
+        7
+      ],
+      [
+        "contract_by_using",
+        6
+      ],
+      [
+        "one_sided_indemnity",
+        6
+      ]
+    ],
+    "sample_misses": {
+      "Contract by using": [
+        "by continuing to access or use the site or services after we have posted a modification on the site or have provided you with notice of a modification , you are indicating that you agree to be bound b",
+        "by continuing to access or use the services after those revisions become effective , you agree to be bound by the revised terms .",
+        "when you use our services you agree to all of these terms .",
+        "any revisions to these terms and conditions will become effective the earlier of ( i ) the end of such 7-day period or ( ii ) the first time you access or use the service after such changes .",
+        "if you do register for or otherwise use our service you shall be deemed to confirm your acceptance of the terms and your agreement to be a party to this binding contract ."
+      ],
+      "Unilateral change": [
+        "if we believe , in our sole discretion , that any member of academia.edu or academia premium or other academia.edu paid services is in breach of our terms , or act outside of the letter or spirit of o",
+        "we reserve the right to make changes to our site , policies , service terms , and these conditions of use at any time .",
+        "netflix regularly makes changes to the service , including the content library .",
+        "that means we may add or remove features , products , or functionalities , and we may also suspend or stop the services altogether .",
+        "we may take any of these actions at any time , and when we do , we will try to notify you beforehand , but this wo n't always be possible ."
+      ],
+      "Unilateral termination": [
+        "it is academia.edu 's policy to terminate , in appropriate circumstances , members or other account holders who repeatedly infringe or are believed to be repeatedly infringing the rights of copyright ",
+        "academia.edu reserves the right to revoke your access to and use of the site , services and collective content at any time , with or without cause .",
+        "the licenses granted by amazon terminate if you do not comply with these conditions of use or any service terms .",
+        "we reserve the right to revoke the free trial and put your account on hold in the event that we determine that you are not eligible .",
+        "your content in memories might become unavailable for any number of reasons , including things like an operational glitch or a decision on our end to terminate your account ."
+      ],
+      "Content removal": [
+        "your content in memories might become unavailable for any number of reasons , including things like an operational glitch or a decision on our end to terminate your account .",
+        "we are not obligated to publish any information or content on our service and can remove it in our sole discretion , with or without notice ."
+      ],
+      "Limitation of liability": [
+        "the limitations of this subsection shall apply to any theory of liability , whether based on warranty , contract , statute , tort ( including negligence ) or otherwise , and whether or not the twitter",
+        "to the extent allowed under law , linkedin and its affiliates ( and those that linkedin works with to provide the services ) ( a ) disclaim all implied warranties and representations ( e.g. warranties",
+        "in no event shall the liability of linkedin and its affiliates ( and those that linkedin works with to provide the services ) exceed , in the aggregate for all claims , an amount that is the lesser of",
+        "in no event will duolingo be responsible for the actions or inactions of any third party payment processor , including , but not limited to , system downtime or payment service outages .",
+        "in the event that duolingo suspends or terminates your use of the service or these terms and conditions or you close your account voluntarily , you understand and agree that you will receive no refund"
+      ],
+      "Jurisdiction": [
+        "in the unlikely event we end up in a legal dispute , we agree to resolve it in california courts ( using california law ) or dublin , ireland courts ( using irish law ) .",
+        "except where our dispute is being resolved pursuant to an arbitration ( as provided below ) , if you are a resident of the united states or canada , you agree that any claim or dispute you may have ag",
+        "except where our dispute is being resolved pursuant to an arbitration ( as provided below ) , if you reside in brazil , you agree that any claim or dispute you may have against evernote must be resolv",
+        "except where our dispute is being resolved pursuant to an arbitration ( as provided below ) , if you are not a resident of the united states , canada , or brazil , you agree that any claim or dispute ",
+        "unless you and we agree otherwise , in the event that the agreement to arbitrate above is found not to apply to you or to a particular claim or dispute , either as a result of your decision to opt out"
+      ],
+      "Choice of law": [
+        "in the unlikely event we end up in a legal dispute , we agree to resolve it in california courts ( using california law ) or dublin , ireland courts ( using irish law ) .",
+        "for all others , including those who live outside of the united states , you agree that the laws of the state of california , u.s.a. , excluding its conflict of laws rules , shall exclusively govern a"
+      ],
+      "Arbitration": [
+        "any dispute , conflict , claim or controversy arising out of or broadly in connection with or relating to the services or these terms , including those relating to its validity , its construction or i"
+      ]
+    },
+    "seconds": 1.17,
+    "ms_per_sentence": 0.72
+  },
+  "cuad": {
+    "dataset": "CUAD v1 (master_clauses.csv)",
+    "part": "holdout",
+    "contracts": 255,
+    "clauses_tested": 941,
+    "recall_right_rule": 0.593,
+    "per_category": {
+      "Renewal Term": {
+        "clauses": 101,
+        "any_flag": 70,
+        "right_rule": 67,
+        "recall_right_rule": 0.663,
+        "recall_any_flag": 0.693
+      },
+      "Non-Compete": {
+        "clauses": 124,
+        "any_flag": 65,
+        "right_rule": 63,
+        "recall_right_rule": 0.508,
+        "recall_any_flag": 0.524
+      },
+      "Cap On Liability": {
+        "clauses": 314,
+        "any_flag": 232,
+        "right_rule": 231,
+        "recall_right_rule": 0.736,
+        "recall_any_flag": 0.739
+      },
+      "Liquidated Damages": {
+        "clauses": 67,
+        "any_flag": 51,
+        "right_rule": 47,
+        "recall_right_rule": 0.701,
+        "recall_any_flag": 0.761
+      },
+      "Covenant Not To Sue": {
+        "clauses": 87,
+        "any_flag": 40,
+        "right_rule": 40,
+        "recall_right_rule": 0.46,
+        "recall_any_flag": 0.46
+      },
+      "Termination For Convenience": {
+        "clauses": 105,
+        "any_flag": 53,
+        "right_rule": 47,
+        "recall_right_rule": 0.448,
+        "recall_any_flag": 0.505
+      },
+      "Ip Ownership Assignment": {
+        "clauses": 143,
+        "any_flag": 66,
+        "right_rule": 63,
+        "recall_right_rule": 0.441,
+        "recall_any_flag": 0.462
+      }
+    },
+    "sample_misses": {
+      "Renewal Term": [
+        "At Rogers' option, this Agreement shall renew for a subsequent term of two (2) years on the terms and conditions herein (the \"Renewal Term\").",
+        "Distributor shall have the option to renew this Agreement for an additional Three (3) year period by providing prior written notice to Company within Ninety (90) days of the end of the initial period ",
+        "In the event that either Wade or Naked wishes to extend the Term of the Agreement as contemplated above, it shall provide the other Party with written notice at least ninety (90) days prior to the exp",
+        "The other Party will then have a period of fourteen (14) days from the date of the notice to indicate whether it also desires to extend the Term, on the terms and conditions set forth herein and if no",
+        "The initial term of this Agreement shall be for a period of four (4) years, commencing on the Effective Date, which term may be extended for up to three (3) years by written agreement of both Parties "
+      ],
+      "Covenant Not To Sue": [
+        "TL recognizes Integrity's title                   to the Integrity Trademarks and will not at any time do or                   suffer to be done any act or thing which will in any way                 ",
+        "Distributor shall not dispute or contest for any reason whatsoever, directly or indirectly, during the term of this Agreement and thereafter, the validity, ownership or enforceability of any of the tr",
+        "Distributor will not institute any proceedings with respect to the trademarks of Company either in Distributor's own name or on behalf of Company without express written permission of Company.",
+        "Honeywell agrees that it will not, and agrees to cause each member of the Honeywell Group not to, (i) initiate any Action against any member of the SpinCo Group or its Affiliates for infringement, mis",
+        "SpinCo agrees that it will not, and agrees to cause each member of the SpinCo Group not to, (i)<omitted>initiate any Action against any member of the Honeywell Group or its Affiliates for infringement"
+      ],
+      "Ip Ownership Assignment": [
+        "The right, title and interest in and to the Company-Skype Branded Content shall be owned by Skype to the extent made up of the Skype Rights which have been integrated into the Company-Skype Branded Co",
+        "Reed's will exclusively own all Deliverables.",
+        "ompany will and hereby does, without further consideration, irrevocably assign to Reed's any and all worldwide right, title or interest that Company may now or hereafter possess in or to the Deliverab",
+        "Distributor shall assign to Company, without charge, any rights in the trademarks of Company that may inure to the benefit of Distributor pursuant to this Agreement or otherwise.",
+        "Franchisee shall execute, for no additional consideration, any and all documents deemed necessary by Franchisor or its attorneys to be necessary to transfer such right, title or interest to Franchisor"
+      ],
+      "Termination For Convenience": [
+        "ETON has the right to terminate this Agreement after approval of the Dossier or marketing application for the Product (or added new product), at its sole discretion, upon providing one hundred eighty ",
+        "The Agreement may be terminated by both Parties with a notification period of *** before the end of the Initial Term of the Agreement.",
+        "Either Party may terminate the Project and all commitments and obligations with respect thereto, subject to Section 8.3 herein, upon thirty (30) days written notice to the other Party.",
+        "This Agreement may be terminated by ArTara upon thirty (30) days prior written notice to University.",
+        "Vyera shall have the right to terminate this Agreement in its entirety:<omitted>(c) at any time following the second (2nd) anniversary of the First Commercial Sale of the Licensed Product, for any rea"
+      ],
+      "Non-Compete": [
+        "Wade represents and warrants that during the Term and in  the Territory, neither Wade nor any of his agents, representatives or employees will solicit, initiate, or encourage any proposal for an endor",
+        "CytoDyn shall have the right to terminate this Agreement in its entirety upon written notice to Vyera on the occurrence of any of the following:<omitted>(c) Vyera breaches its obligations or covenants",
+        "Beginning on the Launch Date and continuing during the Term, VerticalNet shall not place advertising relating to the commercial printing entities listed on Exhibit \"A,\" or other such entities subseque",
+        "Within three      business days of receiving Application Provider's written update,      Excite@Home will remove any advertising from Application Provider's listed      competitors displayed on the Co",
+        "Within three business days of      receiving Excite@Home's written update, Application Provider will remove      any advertising from Excite@Home's listed competitors displayed on the      Co-Branded "
+      ],
+      "Cap On Liability": [
+        "Any claim for damages must be notified to the other Party within six (6) months as from the date on which the damage was caused, failing which such claim is deemed to be waived.",
+        "It is the cumulative maximum for which IBM and its Affiliates and Subcontractors are collectively responsible.",
+        "This is IBM's entire obligation to Customer with regard to any claim of infringement.",
+        "IBM will give Customer a credit equal to the amount Customer paid IBM for the applicable Materials or for use of the applicable Base Components up to a maximum of twelve (12) months of applicable char",
+        "Regardless of the basis on which Customer is entitled to claim damages from IBM (including fundamental breach, negligence, misrepresentation, or other contract or tort claim), IBM is liable for no mor"
+      ],
+      "Liquidated Damages": [
+        "In case of violation of this article, the Party shall pay to the other Party an equivalent of eighteen (18) months gross salary of the respective employee.",
+        "In the event of termination of this Agreement and without limitation of Fox's rights and remedies all of which are expressly reserved, the following payment penalties shall apply: (i) if termination o",
+        "If this Agreement is terminated due to your default, you must, upon written demand, pay us a lump-sum payment in an amount calculated as follows: (a) the average of your Royalty fees and Advertising C",
+        "You specifically acknowledge that our designated representative may take over, control, and operate the Franchised Restaurant, and that you will pay us a service fee of not less than TWO HUNDRED Dolla",
+        "You pay us a nonrefundable Initial Franchise Fee of ________________ _______________________ Dollars ($________) which is payable in full on the date of this Agreement."
+      ]
+    }
+  }
+}

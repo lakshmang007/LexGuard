@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LEXGUARD</title>
+  <link rel="stylesheet" href="/web/style.css">
+  <script src="/web/theme.js"></script>
+</head>
+<body>
+  <header class="top">
+    <h1 class="brand" aria-label="LEXGUARD"><span>L</span><span>E</span><span>X</span><span>G</span><span>U</span><span>A</span><span>R</span><span>D</span></h1>
+    <span class="tag-line">See the risky sentence before you sign.</span>
+    <span class="offline">Runs on your computer. Your document is not uploaded.</span>
+  </header>
+  <main>
+    <section class="input">
+      <textarea id="text" placeholder="Paste an offer letter, quotation, ticket terms or online policy here…"></textarea>
+      <div class="row">
+        <span class="hint">Try a sample:</span>
+        <span id="samples"></span>
+        <label class="btn" for="file">Upload .txt / .pdf</label>
+        <input id="file" type="file" accept=".txt,.pdf,text/plain,application/pdf" hidden>
+      </div>
+      <div class="row">
+        <select id="doctype" aria-label="Document type">
+          <option value="">Detect document type</option>
+          <option value="offer_letter">Offer letter</option>
+          <option value="quotation">Quotation / service agreement</option>
+          <option value="ticket">Ticket terms</option>
+          <option value="policy">Online policy / subscription</option>
+        </select>
+        <label class="toggle"><input id="ai" type="checkbox" disabled> AI layer (not configured)</label>
+        <button id="go" class="primary">Check document</button>
+      </div>
+      <div id="err"></div>
+    </section>
+
+    <section id="out" hidden>
+      <div id="summary"></div>
+      <div class="toolbar">
+        <span class="hint">Show:</span>
+        <select id="minlevel" aria-label="Minimum level">
+          <option value="LOW">All flags</option>
+          <option value="MEDIUM" selected>Medium and high</option>
+          <option value="HIGH">High only</option>
+        </select>
+        <span class="spacer"></span>
+        <button id="copy">Copy clarification email</button>
+        <button id="print">Save report as PDF</button>
+      </div>
+      <div class="results">
+        <div id="doc" class="doc"></div>
+        <div id="cards" class="cards"></div>
+      </div>
+    </section>
+  </main>
+  <footer>LEXGUARD is a review aid, not legal advice. Team Root Coders · HACKNOVA-26.</footer>
+  <script src="/web/report.js"></script>
+  <script src="/web/app.js"></script>
+  <script src="/web/motion.js"></script>
+</body>
+</html>
