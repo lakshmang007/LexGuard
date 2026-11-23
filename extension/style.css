@@ -4,7 +4,7 @@
   --bg: #f8f9fa; --panel: #ffffff; --ink: #202124; --muted: #5f6368; --line: #dadce0;
   --accent: #1a73e8; --accent-bg: #e8f0fe; --on-accent: #ffffff;
   --high: #c5221f; --high-bg: #fce8e6; --high-mark: #fad2cf; --high-ring: #ea4335;
-  --med: #b06000; --med-bg: #fef7e0; --med-mark: #feefc3; --med-ring: #f9ab00;
+  --med: #9a5000; --med-bg: #fef7e0; --med-mark: #feefc3; --med-ring: #f9ab00;
   --low: #5f6368; --low-bg: #f1f3f4; --low-mark: #e8eaed; --low-ring: #9aa0a6;
   --ok: #137333; --ok-bg: #e6f4ea; --ok-ring: #34a853;
   --shadow-1: 0 1px 2px rgba(60, 64, 67, .3), 0 1px 3px 1px rgba(60, 64, 67, .15);
@@ -83,7 +83,7 @@ label.toggle { color: var(--muted); font-size: 14px; display: flex; gap: 6px; al
 .score.high { --ring: var(--high-ring); color: var(--high); } .score.med { --ring: var(--med-ring); color: var(--med); } .score.low { --ring: var(--ok-ring); color: var(--ok); }
 .score .num { font-size: 34px; font-weight: 700; line-height: 1; } .score .of { display: none; }
 .score .lvl { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; margin-top: 4px; }
-.meta { display: grid; gap: 6px; flex: 1; min-width: 220px; }
+.meta { display: grid; gap: 6px; flex: 1; min-width: min(220px, 100%); }
 .verdict { font-size: 19px; font-weight: 500; line-height: 1.4; }
 .ai-note { color: var(--muted); font-size: 13px; }
 .counts { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -98,6 +98,9 @@ label.toggle { color: var(--muted); font-size: 14px; display: flex; gap: 6px; al
 .topq h3 { margin: 2px 0 10px; font-size: 16px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
 .topq h3::before { content: ""; width: 4px; height: 18px; border-radius: 2px; background: var(--g-blue); }
 .topq:nth-of-type(2n) h3::before { background: var(--g-green); }
+/* "English documents only": shown instead of a score, so it gets a yellow edge, not a risk colour. */
+.topq.notice { box-shadow: inset 4px 0 0 var(--g-yellow), var(--shadow-1); }
+.topq.notice h3::before { background: var(--g-yellow); }
 .topq ol { margin: 0; padding-left: 22px; } .topq ol li { margin: 4px 0; }
 .points { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
 .points li { display: flex; gap: 12px; align-items: baseline; }
@@ -114,6 +117,7 @@ mark.high { background: var(--high-mark); box-shadow: inset 0 -2px 0 var(--high-
 mark.med { background: var(--med-mark); box-shadow: inset 0 -2px 0 var(--med-ring); }
 mark.low { background: var(--low-mark); }
 mark.focus, .card.focus { outline: 3px solid var(--g-blue); outline-offset: 2px; }
+.card:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .cards { display: grid; gap: 12px; }
 .card { background: var(--panel); border-radius: var(--radius); padding: 14px 16px 14px 20px; cursor: pointer; box-shadow: inset 5px 0 0 var(--low-ring), var(--shadow-1); transition: box-shadow .2s, transform .2s; }
 .card.high { box-shadow: inset 5px 0 0 var(--high-ring), var(--shadow-1); } .card.med { box-shadow: inset 5px 0 0 var(--med-ring), var(--shadow-1); }
@@ -131,7 +135,8 @@ mark.focus, .card.focus { outline: 3px solid var(--g-blue); outline-offset: 2px;
 .card summary::before { content: ""; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform .2s; }
 .card details[open] summary::before { transform: rotate(45deg); }
 .card details[open] > dl { animation: unfold .25s ease-out; }
-.card blockquote { margin: 0; padding: 10px 12px; background: var(--bg); border-radius: 10px; font: 14px/1.55 Georgia, serif; }
+/* A long URL in a quoted sentence must not widen a narrow side panel. */
+.card blockquote { margin: 0; padding: 10px 12px; background: var(--bg); border-radius: 10px; font: 14px/1.55 Georgia, serif; overflow-wrap: anywhere; }
 .card dl { display: grid; grid-template-columns: 140px 1fr; gap: 6px 12px; margin: 8px 0 0; font-size: 14px; }
 .card dt { color: var(--muted); } .card dd { margin: 0; }
 .card dd.defended { color: var(--ok); } .card dd.safer { font-style: italic; color: var(--ok); }
@@ -152,15 +157,18 @@ footer { color: var(--muted); font-size: 13px; text-align: center; padding: 24px
 .topics .badge { flex: none; }
 .badge.ok { background: var(--ok-bg); color: var(--ok); }
 
-/* Score breakdown, inside the summary card */
-.how-score { margin-top: 4px; font-size: 14px; }
+/* Score breakdown, inside the summary card. It is a size container so the table can drop
+   a column in a narrow side panel instead of pushing the page sideways. */
+.how-score { margin-top: 4px; font-size: 14px; container-type: inline-size; }
 .how-score summary { cursor: pointer; color: var(--accent); font-weight: 500; width: fit-content; }
 .how-score p { margin: 8px 0; }
 .breakdown { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px; }
 .breakdown th { text-align: left; color: var(--muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--line); }
 .breakdown td { padding: 6px 8px; border-bottom: 1px solid var(--line); }
-.breakdown td:first-child { display: flex; gap: 8px; align-items: baseline; }
+.breakdown td:first-child { display: flex; gap: 8px; align-items: baseline; overflow-wrap: anywhere; }
 .breakdown td:nth-child(n + 3), .breakdown th:nth-child(n + 3) { text-align: right; }
+/* The sentence count is the least needed column; the points still add up without it. */
+@container (max-width: 340px) { .breakdown th:nth-child(3), .breakdown td:nth-child(3) { display: none; } }
 
 /* How LEXGUARD checked this */
 .agents { margin: 0; padding: 0; list-style: none; counter-reset: agent; display: grid; gap: 8px; }

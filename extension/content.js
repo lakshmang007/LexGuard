@@ -4,18 +4,31 @@
   window.__lexguardLoaded = true;
 
   const CLS = { HIGH: "lexguard-high", MEDIUM: "lexguard-med", LOW: "lexguard-low" };
+  const ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 };
   const SKIP = /^(SCRIPT|STYLE|NOSCRIPT|TEXTAREA|INPUT|SELECT|OPTION|MARK)$/;
 
   function clear() {
+    // Merge split text back once per parent, not once per mark (a long page has hundreds).
+    const parents = new Set();
     document.querySelectorAll("mark.lexguard").forEach((m) => {
       const parent = m.parentNode;
       while (m.firstChild) parent.insertBefore(m.firstChild, m);
       parent.removeChild(m);
-      parent.normalize();
+      parents.add(parent);
     });
+    parents.forEach((p) => p.normalize());
   }
 
-  // Flatten visible text with collapsed whitespace, remembering where each character came from.
+  // A few letters (Turkish "İ") grow when lowercased; keep those as-is so offsets line up.
+  // Page text and flag text must both go through this, or "İ" never matches.
+  function lower(s) {
+    const l = s.toLowerCase();
+    if (l.length === s.length) return l;
+    return Array.from(s, (c) => (c.toLowerCase().length === c.length ? c.toLowerCase() : c)).join("");
+  }
+
+  // Flatten visible text with collapsed whitespace, remembering where each character came from:
+  // flat[i] is offAt[i] in nodes[nodeAt[i]], or a gap between nodes when nodeAt[i] is -1.
   function textIndex() {
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
       acceptNode(n) {
@@ -24,25 +37,36 @@
         return NodeFilter.FILTER_ACCEPT;
       },
     });
-    let flat = "";
-    const map = [];
-    let lastSpace = true;
+    const nodes = [], texts = [];
+    let size = 0;
     for (let n; (n = walker.nextNode()); ) {
       const v = n.nodeValue;
-      for (let i = 0; i < v.length; i++) {
-        if (/\s/.test(v[i])) {
-          if (lastSpace) continue;
-          flat += " "; map.push([n, i]); lastSpace = true;
-        } else {
-          flat += v[i].toLowerCase(); map.push([n, i]); lastSpace = false;
-        }
-      }
-      if (!lastSpace) { flat += " "; map.push(null); lastSpace = true; }
+      const low = lower(v);
+      nodes.push(n);
+      texts.push(low);
+      size += low.length + 1;
     }
-    return { flat, map };
+    const nodeAt = new Int32Array(size), offAt = new Int32Array(size);
+    const parts = []; // joined once at the end: += per character is quadratic on big pages
+    let len = 0, lastSpace = true;
+    texts.forEach((v, k) => {
+      const ws = /\s+/g;
+      for (let i = 0, m; i < v.length; i = ws.lastIndex) {
+        const end = (m = ws.exec(v)) ? m.index : v.length;
+        if (end > i) {
+          parts.push(v.slice(i, end));
+          for (; i < end; i++) { nodeAt[len] = k; offAt[len++] = i; }
+          lastSpace = false;
+        }
+        if (!m) break;
+        if (!lastSpace) { parts.push(" "); nodeAt[len] = k; offAt[len++] = end; lastSpace = true; }
+      }
+      if (!lastSpace) { parts.push(" "); nodeAt[len++] = -1; lastSpace = true; }
+    });
+    return { flat: parts.join(""), nodes, nodeAt, offAt };
   }
 
-  const norm = (s) => s.replace(/\s+/g, " ").trim().toLowerCase();
+  const norm = (s) => lower(s.replace(/\s+/g, " ").trim());
 
   function wrap(node, s, e, flag) {
     const mid = s > 0 ? node.splitText(s) : node;
@@ -55,25 +79,43 @@
     mark.appendChild(mid);
   }
 
-  function highlight(flag) {
-    const { flat, map } = textIndex();
-    let needle = norm(flag.text);
-    let idx = flat.indexOf(needle);
-    if (idx < 0 && needle.length > 60) {
-      needle = needle.slice(0, 60);
-      idx = flat.indexOf(needle);
+  // Index the page once, place every flag (in priority order), then wrap. Returns missing ids.
+  function highlight(flags) {
+    const { flat, nodes, nodeAt, offAt } = textIndex();
+    const taken = new Uint8Array(flat.length);
+    const free = (i, n) => { for (let j = i; j < i + n; j++) if (taken[j]) return false; return true; };
+    // First occurrence not already claimed, so a repeated sentence goes to its next copy.
+    const find = (needle) => {
+      for (let i = flat.indexOf(needle); i >= 0; i = flat.indexOf(needle, i + 1)) if (free(i, needle.length)) return i;
+      return -1;
+    };
+    const hits = [], missing = [];
+    for (const flag of flags) {
+      let needle = norm(flag.text);
+      let idx = find(needle);
+      if (idx < 0 && needle.length > 60) {
+        needle = needle.slice(0, 60);
+        idx = find(needle);
+      }
+      if (idx < 0) { missing.push(flag.id); continue; }
+      taken.fill(1, idx, idx + needle.length);
+      hits.push({ flag, idx, end: idx + needle.length });
     }
-    if (idx < 0) return false;
-    const spans = new Map();
-    for (let i = idx; i < idx + needle.length; i++) {
-      const at = map[i];
-      if (!at) continue;
-      const [node, off] = at;
-      const span = spans.get(node) || [off, off];
-      spans.set(node, [Math.min(span[0], off), Math.max(span[1], off)]);
+    // Last match first: splitText keeps the start of a node in place, so the stored
+    // offsets of earlier matches in the same node stay valid.
+    hits.sort((a, b) => b.idx - a.idx);
+    for (const { flag, idx, end } of hits) {
+      const spans = new Map();
+      for (let i = idx; i < end; i++) {
+        const k = nodeAt[i];
+        if (k < 0) continue;
+        const span = spans.get(k);
+        if (span) span[1] = offAt[i];
+        else spans.set(k, [offAt[i], offAt[i]]);
+      }
+      spans.forEach(([s, e], k) => wrap(nodes[k], s, e, flag));
     }
-    spans.forEach(([s, e], node) => wrap(node, s, e, flag));
-    return true;
+    return missing;
   }
 
   function focus(id) {
@@ -92,9 +134,9 @@
   chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
     if (msg.type === "highlight") {
       clear();
-      const order = { HIGH: 0, MEDIUM: 1, LOW: 2 };
-      const flags = [...msg.flags].sort((a, b) => order[a.level] - order[b.level]);
-      const missing = flags.filter((f) => !highlight(f)).map((f) => f.id);
+      // Stable sort: HIGH, MEDIUM, LOW, then the order sent, so the first wins shared text.
+      const flags = [...msg.flags].sort((a, b) => ORDER[a.level] - ORDER[b.level]);
+      const missing = highlight(flags);
       reply({ found: flags.length - missing.length, missing });
     } else if (msg.type === "focus") {
       reply({ ok: focus(msg.id) });

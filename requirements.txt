@@ -1,0 +1,7 @@
+# LEXGUARD needs no packages. The engine, the tests and server.py use only the
+# Python standard library (Python 3.9+), and the browser extension has no dependencies.
+#
+# Optional: PDF upload in the local web app (server.py, POST /extract). Only if you want it:
+#   pip install -r requirements.txt
+# Older pypdf versions have parser denial-of-service bugs, hence the minimum version.
+pypdf>=6.0

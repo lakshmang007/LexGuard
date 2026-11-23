@@ -1,5 +1,7 @@
 # Release Readiness Report — LEXGUARD — 2026-11-19
 
+> **Status 2026-11-23 (v0.7.0):** all code findings below are fixed; the Firebase key in history and the missing licence need the owners. See the [re-audit](release-audit-2026-11-23.md).
+
 ## Verdict: GO WITH FIXES
 **For the hackathon demo: GO.** A fresh clone builds and runs from the README alone, and every test suite passes. **Before a public release** (Chrome Web Store or wider sharing): rotate or restrict the Google/Firebase API key in the git history (security, High), fix the highlighter's slowdown on very long pages, and add a licence.
 

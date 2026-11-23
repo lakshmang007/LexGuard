@@ -10,6 +10,7 @@ from .doc_type import LABELS, detect
 from .extractor import extract
 from .impact import check_impact
 from .judge import judge
+from .language import detect as detect_language
 from .risk_finder import applies, compile_rules, find_risks
 
 RULES_PATH = Path(__file__).parent / "rules" / "rules.json"
@@ -34,6 +35,8 @@ def analyze(text, doc_type=None, use_ai=False):
     t0 = time.perf_counter()
     rules = load_rules()
     text = clean(text)
+    # The rules still run; the UI hides the score when the text is not English.
+    language = detect_language(text)
     detected = detect(text)
     if doc_type in LABELS:
         detected = {**detected, "type": doc_type, "label": LABELS[doc_type], "confidence": 1.0}
@@ -53,6 +56,7 @@ def analyze(text, doc_type=None, use_ai=False):
     return {
         "text": text,
         "doc_type": detected,
+        "language": language,
         "clause_count": len(clauses),
         "rules_checked": sum(1 for r in rules["risks"] if applies(r, detected["type"])),
         "overall": overall,

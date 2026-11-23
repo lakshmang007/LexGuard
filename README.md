@@ -1,5 +1,7 @@
 # LEXGUARD
 
+[![Tests](https://github.com/lakshmang007/LexGuard/actions/workflows/test.yml/badge.svg)](https://github.com/lakshmang007/LexGuard/actions/workflows/test.yml)
+
 **See the risky sentence before you sign.** LEXGUARD is a Chrome extension (plus an optional local web app) that checks offer letters, quotations, ticket terms and online policies sentence by sentence. It shows you which sentences put **you** at risk, explains each in plain words, and tells you what to ask before you sign.
 
 It runs entirely in your browser. There is no server to set up, no account, no AI model and no upload.
@@ -54,7 +56,7 @@ For the demo page you should see **76/100, high risk**, with eight sentences hig
 **Limits:**
 - Chrome's built-in PDF viewer can't be read by extensions, so upload PDFs in the checker instead.
 - Scanned PDFs without a text layer need OCR, which isn't built yet.
-- Only **English** documents are checked. Hindi, Kannada and other non-Latin text currently produce no results.
+- Only **English** documents are checked. When most of a document's letters are not Latin (Hindi, Kannada, Tamil, Chinese and so on), LEXGUARD shows an "English documents only" notice instead of a score, so it never calls such a document safe. Very short non-English snippets (under 20 letters) are still checked as if they were English.
 - Rule-based detection catches about 74% of unfair website terms and 59% of business-contract risks, so a clean report does not mean a document is safe.
 
 ## How it works
@@ -83,9 +85,10 @@ More detail:
 
 A local copy of the checker that runs on the Python engine. You need it only for development or the evaluations.
 
-**Requirements:** Python 3.9+ (standard library only). `pypdf` is optional and needed only for PDF upload in the web app.
+**Requirements:** Python 3.9+ (standard library only). `pypdf` is optional and needed only for PDF upload in the web app:
 
 ```bash
+pip install -r requirements.txt   # optional: pypdf>=6.0, for PDF upload
 python server.py
 ```
 
@@ -99,18 +102,37 @@ Open http://127.0.0.1:8787. The demo signup page is at http://127.0.0.1:8787/web
 | `PORT` environment variable | `8787` | Port, if no argument is given |
 | `LEXGUARD_AI_ENDPOINT` environment variable | unset | Placeholder for a future optional AI layer. `engine/ai_layer.py` is a stub: setting this changes nothing today |
 
-The server listens on `127.0.0.1` only and refuses request bodies over 10 MB. It is meant for local development; see the [security audit](docs/audits/security-audit-2026-11-19.md) before exposing it anywhere.
+The server is meant for local development only:
+- It listens on `127.0.0.1` and answers only requests addressed to `127.0.0.1:<port>` or `localhost:<port>` (others get 403), and it sends no CORS headers, so other websites can't read from it.
+- Each route serves files only from its own folder (`web/`, `extension/`, `samples/`).
+- Request bodies over 10 MB get 413; bad input gets 400 with a short message, and error details go to the terminal only.
+
+See the [security audit](docs/audits/security-audit-2026-11-19.md) before exposing it anywhere.
 
 ## Testing
 
+One command runs everything (needs Node.js 18+ for two of the steps; they are skipped without it):
+
 ```bash
-python -m eval.benchmark                      # synthetic samples vs the targets
-python -m eval.public_datasets --split test   # UNFAIR-ToS + CUAD held-out results
-python -m eval.parity_check                   # Python engine == browser engine (needs Node.js)
-node eval/chat_test.js                        # 48 chatbot tests
+python tools/run_all_tests.py
 ```
 
-All four pass on a fresh clone. The parity check compares 2,892 documents and sentences.
+It syncs the extension copies, checks they match their sources, then runs:
+
+| Step | Command | What it checks |
+|---|---|---|
+| Benchmark | `python -m eval.benchmark` | synthetic samples vs 6 targets, including refusing non-English documents |
+| Parity | `python -m eval.parity_check` | Python engine == browser engine on 2,895 documents and sentences |
+| Chat | `node eval/chat_test.js` | 65 chatbot tests: intents, escaping, planted markup, non-English reports |
+| Server | `python -m eval.server_test` | 18 checks on the local server: path tricks, Host check, size limits, errors |
+
+GitHub Actions runs it on Ubuntu and Windows with Python 3.9 and 3.13 on every push and pull request ([`.github/workflows/test.yml`](.github/workflows/test.yml)).
+
+The accuracy numbers below come from a separate, slower command:
+
+```bash
+python -m eval.public_datasets --split test   # UNFAIR-ToS + CUAD held-out results; rewrites eval/results_public.*
+```
 
 ### Results
 
@@ -133,8 +155,8 @@ server.py    local web app server (standard library)
 samples/     synthetic test documents and planted-risk labels
 demo/        demo kit: sample .txt/.pdf files, demo signup page, HOW_TO_DEMO.txt, demo video
 datasets/    UNFAIR-ToS and CUAD (CC BY 4.0)
-eval/        benchmark, dataset evaluation, parity check, chat tests, results
-tools/       sync_extension.py, make_demo_kit.py, make_rules_doc.py
+eval/        benchmark, dataset evaluation, parity check, chat and server tests, results
+tools/       run_all_tests.py, sync_extension.py, make_demo_kit.py, make_rules_doc.py
 docs/        architecture, rule reference, audit reports
 ```
 
@@ -143,12 +165,12 @@ docs/        architecture, rule reference, audit reports
 - [Architecture](docs/ARCHITECTURE.md)
 - [Rule reference](docs/RULES.md)
 - [Demo guide](demo/HOW_TO_DEMO.txt)
-- Audits (2026-11-19): [security](docs/audits/security-audit-2026-11-19.md) · [release readiness](docs/audits/release-audit-2026-11-19.md) · [compatibility](docs/audits/compatibility-audit-2026-11-19.md)
+- Audits: [re-audit for 0.7.0 (2026-11-23)](docs/audits/release-audit-2026-11-23.md); first round (2026-11-19): [security](docs/audits/security-audit-2026-11-19.md) · [release readiness](docs/audits/release-audit-2026-11-19.md) · [compatibility](docs/audits/compatibility-audit-2026-11-19.md)
 - [Changelog](CHANGELOG.md)
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Before opening a pull request, run `python tools/sync_extension.py`, then the four test commands above.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Before opening a pull request, run `python tools/run_all_tests.py`.
 
 ## AI disclosure
 

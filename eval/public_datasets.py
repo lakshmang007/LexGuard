@@ -6,7 +6,9 @@
    contracts (The Atticus Project, 2021). Positive examples only.
 
 Run from the lexguard folder:  python -m eval.public_datasets [--split test]
-Writes eval/results_public.json and eval/results_public.md.
+Writes eval/results_public.json and eval/results_public.md for the held-out
+run only (test split + CUAD holdout); other runs just print, so a tuning or CI
+run cannot overwrite the published numbers.
 """
 import argparse
 import ast
@@ -60,7 +62,7 @@ def rules_hit(text):
 
 def load_unfair(split):
     path = DATA / "lexglue_unfair_tos" / f"{split}.jsonl"
-    names = json.loads((DATA / "lexglue_unfair_tos" / "meta.json").read_text())["labels"]
+    names = json.loads((DATA / "lexglue_unfair_tos" / "meta.json").read_text(encoding="utf-8"))["labels"]
     rows = [json.loads(line) for line in path.open(encoding="utf-8")]
     assert all(lab in names for r in rows for lab in r["labels"])
     return [(r["text"], r["labels"]) for r in rows]
@@ -201,9 +203,11 @@ def main():
     args = ap.parse_args()
     u = eval_unfair(args.split)
     c = eval_cuad(args.cuad or ("holdout" if args.split == "test" else "tune"))
-    (ROOT / "eval" / "results_public.json").write_text(json.dumps({"unfair_tos": u, "cuad": c}, indent=2, ensure_ascii=False), encoding="utf-8")
     md = to_markdown(u, c)
-    (ROOT / "eval" / "results_public.md").write_text(md, encoding="utf-8")
+    # README quotes the held-out numbers from these files, so only that run may write them
+    if args.split == "test" and args.cuad in (None, "holdout"):
+        (ROOT / "eval" / "results_public.json").write_text(json.dumps({"unfair_tos": u, "cuad": c}, indent=2, ensure_ascii=False), encoding="utf-8")
+        (ROOT / "eval" / "results_public.md").write_text(md, encoding="utf-8")
     print(md)
     print("Top rules firing on fair sentences:", u["top_false_positive_rules"])
 

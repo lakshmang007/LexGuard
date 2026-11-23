@@ -1,5 +1,7 @@
 # Compatibility Audit — LEXGUARD — 2026-11-19
 
+> **Status 2026-11-23 (v0.7.0):** all code findings below are fixed; the Firebase key in history and the missing licence need the owners. See the [re-audit](release-audit-2026-11-23.md).
+
 ## Summary
 LEXGUARD works in Chromium at every width from 400 px (side panel) to 1920 px, in light and dark mode, and its scripts run on Windows with Python 3.13 and Node 22. The biggest risk is not a device but a **language**: documents in Hindi, Kannada or other non-Latin scripts produce 0 sentences and a misleading "No serious risks found / LOW" verdict. The extension also does not declare the Chrome version it needs (116+).
 

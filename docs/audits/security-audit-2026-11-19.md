@@ -1,5 +1,7 @@
 # Security Audit — LEXGUARD — 2026-11-19
 
+> **Status 2026-11-23 (v0.7.0):** all code findings below are fixed; the Firebase key in history and the missing licence need the owners. See the [re-audit](release-audit-2026-11-23.md).
+
 ## Summary
 Overall risk: **High**, driven by a Google/Firebase API key that sits in the public git history of the `lexguard` repo (inherited from the old React/Gemini app). The current code is in good shape: page and PDF text never becomes HTML anywhere (confirmed with a hostile document), and the extension asks for the minimum permissions. The remaining issues are in the optional local Python server (it serves every file in the project folder to any website) and an outdated pdf.js with a known CVE that the extension's built-in security policy already blocks.
 

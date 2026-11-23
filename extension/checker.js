@@ -11,7 +11,8 @@ function showError(msg) {
 }
 
 async function pdfText(buffer) {
-  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+  // No eval for fonts: pdf.js 3.x can run script from a crafted PDF otherwise (CVE-2024-4367).
+  const pdf = await pdfjsLib.getDocument({ data: buffer, isEvalSupported: false }).promise;
   const pages = [];
   for (let i = 1; i <= pdf.numPages; i++) {
     const content = await (await pdf.getPage(i)).getTextContent();
@@ -60,14 +61,24 @@ async function analyze() {
   }
 }
 
+// The engine marks text that is mostly not in Latin letters; the rules cannot read it.
+const unsupported = (r) => Boolean(r.language) && r.language.supported === false;
+
 function render() {
   const order = { LOW: 0, MEDIUM: 1, HIGH: 2 };
   const min = $("minlevel").value;
   $("out").hidden = false;
   $("summary").innerHTML = LexReport.summary(result);
-  $("doc").innerHTML = LexReport.highlighted(result, min);
-  const flags = result.flags.filter((f) => order[f.level] >= order[min]).sort((a, b) => order[b.level] - order[a.level] || a.id - b.id);
-  $("cards").innerHTML = flags.map(LexReport.card).join("") || `<p class="hint">No flags at this level.</p>`;
+  // The summary shows the "English only" notice; there is nothing to highlight or list.
+  const skip = unsupported(result);
+  $("doc").hidden = skip;
+  if (skip) {
+    $("doc").innerHTML = $("cards").innerHTML = "";
+  } else {
+    $("doc").innerHTML = LexReport.highlighted(result, min);
+    const flags = result.flags.filter((f) => order[f.level] >= order[min]).sort((a, b) => order[b.level] - order[a.level] || a.id - b.id);
+    $("cards").innerHTML = flags.map(LexReport.card).join("") || `<p class="hint">No flags at this level.</p>`;
+  }
   $("summary").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -85,6 +96,16 @@ document.addEventListener("click", (e) => {
   if (e.target.closest("details")) return;
   const el = e.target.closest("mark[data-id], .card[data-id]");
   if (el) focusClause(el.dataset.id);
+});
+
+// Enter or Space on a focused card does what a click does. Keys pressed in its
+// "See details" toggle or in a form control keep their usual job.
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const card = e.target.closest(".card[data-id]");
+  if (!card || e.target.closest("details, summary, input, textarea, select, button, a[href]")) return;
+  e.preventDefault(); // Space would scroll the page
+  focusClause(card.dataset.id);
 });
 
 $("go").addEventListener("click", analyze);

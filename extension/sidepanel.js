@@ -8,6 +8,9 @@ function showError(msg) {
   $("err").innerHTML = msg ? `<div class="error">${LexReport.esc(msg)}</div>` : "";
 }
 
+// The engine marks text that is mostly not in Latin letters; the rules cannot read it.
+const unsupported = (r) => Boolean(r.language) && r.language.supported === false;
+
 async function activeTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   return tab;
@@ -18,8 +21,9 @@ const readPageFn = () => ({
   title: document.title,
   selection: String(getSelection()),
   text: document.body.innerText,
+  // Only real web addresses: a page could label a javascript: link "Terms of Service".
   links: [...document.links]
-    .filter((a) => /terms|conditions|privacy|refund|cancell?ation|policy|agreement/i.test(a.textContent))
+    .filter((a) => /^https?:/i.test(a.href) && /terms|conditions|privacy|refund|cancell?ation|policy|agreement/i.test(a.textContent))
     .slice(0, 8)
     .map((a) => ({ text: a.textContent.trim().slice(0, 60), href: a.href })),
 });
@@ -52,16 +56,22 @@ async function run(mode, allowed = Promise.resolve(true)) {
   if (!text.trim()) return showError(mode === "selection" ? "Select some text on the page first." : "This page has no readable text.");
 
   $("links").innerHTML = mode === "page" && page.links.length
-    ? `<b>Terms links on this page</b> (open one, then check it):<ul>${page.links.map((l) => `<li><a href="${LexReport.esc(l.href)}" target="_blank">${LexReport.esc(l.text || l.href)}</a></li>`).join("")}</ul>`
+    ? `<b>Terms links on this page</b> (open one, then check it):<ul>${page.links.map((l) => `<li><a href="${LexReport.esc(l.href)}" target="_blank" rel="noopener noreferrer">${LexReport.esc(l.text || l.href)}</a></li>`).join("")}</ul>`
     : "";
 
   try {
     await LexEngine.loadRules();
     result = LexEngine.analyze(text, $("doctype").value || null);
     result.source = { host: page.host, title: page.title };
-    await chrome.scripting.insertCSS({ target: { tabId }, files: ["content.css"] });
-    await chrome.scripting.executeScript({ target: { tabId }, files: ["content.js"] });
-    const marked = await chrome.tabs.sendMessage(tabId, { type: "highlight", flags: result.flags });
+    let marked = null;
+    if (unsupported(result)) {
+      // Nothing to highlight. Remove marks left by an earlier check of this tab, if any.
+      chrome.tabs.sendMessage(tabId, { type: "clear" }).catch(() => {});
+    } else {
+      await chrome.scripting.insertCSS({ target: { tabId }, files: ["content.css"] });
+      await chrome.scripting.executeScript({ target: { tabId }, files: ["content.js"] });
+      marked = await chrome.tabs.sendMessage(tabId, { type: "highlight", flags: result.flags });
+    }
     render(marked);
     chat.reset();
   } catch (err) {
@@ -73,6 +83,12 @@ function render(marked) {
   const order = { HIGH: 0, MEDIUM: 1, LOW: 2 };
   $("out").hidden = false;
   $("summary").innerHTML = LexReport.summary(result);
+  if (unsupported(result)) {
+    // The summary shows the "English only" notice; there are no cards to list.
+    $("note").textContent = "";
+    $("cards").innerHTML = "";
+    return;
+  }
   $("note").textContent = marked && marked.missing.length
     ? `${marked.found} of ${result.flags.length} flagged sentences are highlighted on the page. The rest are listed below.`
     : "";
@@ -92,13 +108,27 @@ function focusCard(id) {
   if (card) { card.classList.add("focus"); card.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
 }
 
+// Mark the card here and scroll the page to its highlighted sentence.
+function jumpTo(id) {
+  focusCard(id);
+  chrome.tabs.sendMessage(tabId, { type: "focus", id });
+}
+
 document.addEventListener("click", (e) => {
   const el = e.target.closest("[data-goto], .card[data-id]");
   if (!el || !tabId || (!el.dataset.goto && e.target.closest("details"))) return;
   e.preventDefault();
-  const id = Number(el.dataset.goto || el.dataset.id);
-  focusCard(id);
-  chrome.tabs.sendMessage(tabId, { type: "focus", id });
+  jumpTo(Number(el.dataset.goto || el.dataset.id));
+});
+
+// Enter or Space on a focused card does what a click does. Keys pressed in its
+// "See details" toggle or in a form control keep their usual job.
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const card = e.target.closest(".card[data-id]");
+  if (!card || !tabId || e.target.closest("details, summary, input, textarea, select, button, a[href]")) return;
+  e.preventDefault(); // Space would scroll the panel
+  jumpTo(Number(card.dataset.id));
 });
 
 chrome.runtime.onMessage.addListener((msg) => {

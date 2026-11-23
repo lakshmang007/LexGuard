@@ -10,6 +10,7 @@ const out = cases.map(({ text, doc_type }) => {
   const r = LexEngine.analyze(text, doc_type);
   return {
     doc_type: r.doc_type.type,
+    language: { supported: r.language.supported, script: r.language.script, latin_share: r.language.latin_share },
     score: r.overall.score,
     skipped: r.overall.skipped,
     impact: r.flags.map((f) => f.impact),

@@ -78,7 +78,10 @@ const LexChat = (() => {
 
   // ---- Helpers --------------------------------------------------------------------------------
   const link = (f) => `[[${f.id}|${f.label}]]`;
-  const quote = (t) => `“${t.length > 220 ? `${t.slice(0, 220).trim()}…` : t}”`;
+  // Document text must not turn into chat markup: break up "[[" and "**" with a zero-width space,
+  // so a page can't plant a fake clause link or bold "safe to sign" inside an answer.
+  const defuse = (t) => t.replace(/\[\[/g, "[​[").replace(/\*\*/g, "*​*");
+  const quote = (t) => `“${defuse(t.length > 220 ? `${t.slice(0, 220).trim()}…` : t)}”`;
 
   function flagLine(f) {
     return `${link(f)} **${f.level}: ${f.risk_name}.** ${quote(f.text)}\n${plain(f.reason)}${f.defended ? " (The Defender found a protection that lowers this.)" : ""}\nAsk: ${f.question}`;
@@ -123,117 +126,150 @@ const LexChat = (() => {
   }
 
   const sorted = (flags) => [...flags].sort((a, b) => ORDER[a.level] - ORDER[b.level] || b.weight - a.weight);
+  // A flag is about some rules when its own rule, or one merged into it, is among them.
+  const touches = (f, rules) => rules.includes(f.rule) || f.also.some((a) => rules.includes(a.rule));
 
-  // ---- Intents ----------------------------------------------------------------------------------
-  function answer(questionRaw, report) {
-    const question = String(questionRaw || "").trim();
-    const q = question.toLowerCase();
-    const flags = report ? report.flags : [];
-    const o = report ? report.overall : null;
-    const needReport = "Check a page or document first (\"Check this page\" or upload a file), then ask me about it. You can still ask what a legal word means, like \"What is indemnity?\".";
+  // report.language marks text that is mostly not Latin script. The rules only know English
+  // wording, so answering from such a report would be a false "no risk".
+  const foreignLanguage = (report) => (report && report.language && report.language.supported === false ? report.language : null);
 
-    if (!question) return { text: "Ask me anything about the document, for example \"Can I get a refund?\" or \"What does indemnity mean?\"." };
+  // ---- Answers ----------------------------------------------------------------------------------
+  const MAX_QUESTION = 300; // the input's maxlength
+  const NEED_REPORT = "Check a page or document first (\"Check this page\" or upload a file), then ask me about it. You can still ask what a legal word means, like \"What is indemnity?\".";
+  // Same wording as the report's notice (web/report.js languageNotice): "Latin" as the top script
+  // of a mostly non-English document would contradict "English only", so call it mixed.
+  const SCRIPT_NAMES = { CJK: "Chinese, Japanese or Korean", Other: "non-English" };
+  const englishOnly = (lang) => `${!lang.script || lang.script === "Latin" ? "Most of this document is not in English" : `This document looks like ${SCRIPT_NAMES[lang.script] || lang.script} text`}. LEXGUARD can only check English documents for now, so I can't answer questions about it. You can still ask what a legal word means.`;
 
-    if (/^(hi|hello|hey|namaste|help|what can you do|how do you work|who are you)\b/.test(q)) {
-      return { text: "I answer questions about the document LEXGUARD just checked, using its report and rules. I don't use any AI service and nothing is uploaded. Try:\n• \"Should I sign this?\"\n• \"Why is the score " + (o ? o.score : "high") + "?\"\n• \"Can I get a refund?\"\n• \"What does arbitration mean?\"\n• \"Explain clause 5\"" };
-    }
+  // A non-English report has no score worth showing, so the example falls back to "high".
+  function greet({ o, foreign }) {
+    return { text: "I answer questions about the document LEXGUARD just checked, using its report and rules. I don't use any AI service and nothing is uploaded. Try:\n• \"Should I sign this?\"\n• \"Why is the score " + (o && !foreign ? o.score : "high") + "?\"\n• \"Can I get a refund?\"\n• \"What does arbitration mean?\"\n• \"Explain clause 5\"" };
+  }
 
-    // A specific clause or sentence: "clause 7", "sentence 12", "section 2.3".
-    const ref = q.match(/\b(clause|section|sentence|point|para(?:graph)?)\s*(\d{1,3}(?:\.\d{1,2})?)\b/);
-    if (ref) {
-      if (!report) return { text: needReport };
-      const [, kind, num] = ref;
-      const matchKind = kind === "sentence" ? (f) => !f.section && String(f.id) === num : (f) => f.section === num;
-      const hits = flags.filter(matchKind);
-      if (hits.length) return { text: hits.map(flagLine).join("\n\n"), refs: hits.map((f) => f.id) };
-      const skipped = (o.skipped_examples || []).filter((s) => s.label.toLowerCase() === `${kind === "sentence" ? "sentence" : "clause"} ${num}`);
-      if (skipped.length) return { text: `${skipped[0].label} is not a risk for you: ${skipped[0].reason} ${quote(skipped[0].text)}` };
-      return { text: `LEXGUARD found no risk in ${kind} ${num}. That doesn't prove it is fine: the rules only know common risky wording, so read it yourself if it matters to you.` };
-    }
+  function explainClause({ flags, o }, [, kind, num]) {
+    const matchKind = kind === "sentence" ? (f) => !f.section && String(f.id) === num : (f) => f.section === num;
+    const hits = flags.filter(matchKind);
+    if (hits.length) return { text: hits.map(flagLine).join("\n\n"), refs: hits.map((f) => f.id) };
+    const skipped = (o.skipped_examples || []).filter((s) => s.label.toLowerCase() === `${kind === "sentence" ? "sentence" : "clause"} ${num}`);
+    if (skipped.length) return { text: `${skipped[0].label} is not a risk for you: ${skipped[0].reason} ${quote(skipped[0].text)}` };
+    return { text: `LEXGUARD found no risk in ${kind} ${num}. That doesn't prove it is fine: the rules only know common risky wording, so read it yourself if it matters to you.` };
+  }
 
-    // The score.
-    if (/\b(score|points?|rating|how (?:risky|bad)|risk level|why (?:is it|so) (?:high|low))\b/.test(q)) {
-      if (!report) return { text: needReport };
-      const top = o.breakdown.slice(0, 4).map((k) => `• ${k.name}: ${k.level} (+${k.points})`).join("\n");
-      return { text: `The score is ${o.score}/100 (${o.level} risk). Each kind of risk counts once: serious +15, medium +5, minor +1, capped at 100. Here: ${o.kind_counts.HIGH} serious, ${o.kind_counts.MEDIUM} medium and ${o.kind_counts.LOW} minor kinds = ${o.points} points.${top ? `\nBiggest contributors:\n${top}` : ""}` };
-    }
+  function explainScore({ o }) {
+    const top = o.breakdown.slice(0, 4).map((k) => `• ${k.name}: ${k.level} (+${k.points})`).join("\n");
+    return { text: `The score is ${o.score}/100 (${o.level} risk). Each kind of risk counts once: serious +15, medium +5, minor +1, capped at 100. Here: ${o.kind_counts.HIGH} serious, ${o.kind_counts.MEDIUM} medium and ${o.kind_counts.LOW} minor kinds = ${o.points} points.${top ? `\nBiggest contributors:\n${top}` : ""}` };
+  }
 
-    // Should I sign / is it safe.
-    if (/\b(should i (?:sign|agree|accept|join|buy|pay)|is (?:it|this) (?:safe|ok|okay|fair|good|legit)|can i (?:sign|trust)|safe to)\b/.test(q)) {
-      if (!report) return { text: needReport };
-      const qs = o.top_questions.map((t) => `• [[${t.clause_id}|${t.label}]] ${t.question}`).join("\n");
-      const verdict = o.level === "HIGH" ? `This looks HIGH risk (${o.score}/100). Don't sign or agree until you have answers to these:`
-        : o.level === "MEDIUM" ? `This is MEDIUM risk (${o.score}/100). It may be fine, but first ask:`
-          : `This looks LOW risk (${o.score}/100): LEXGUARD found no serious problems.`;
-      return { text: `${verdict}${qs ? `\n${qs}` : ""}\nLEXGUARD is a review aid, not legal advice. For an important contract, ask someone you trust or a lawyer.`, refs: o.top_questions.map((t) => t.clause_id) };
-    }
+  function verdict({ o }) {
+    const qs = o.top_questions.map((t) => `• [[${t.clause_id}|${t.label}]] ${t.question}`).join("\n");
+    const head = o.level === "HIGH" ? `This looks HIGH risk (${o.score}/100). Don't sign or agree until you have answers to these:`
+      : o.level === "MEDIUM" ? `This is MEDIUM risk (${o.score}/100). It may be fine, but first ask:`
+        : `This looks LOW risk (${o.score}/100): LEXGUARD found no serious problems.`;
+    return { text: `${head}${qs ? `\n${qs}` : ""}\nLEXGUARD is a review aid, not legal advice. For an important contract, ask someone you trust or a lawyer.`, refs: o.top_questions.map((t) => t.clause_id) };
+  }
 
-    // What to ask / negotiate.
-    if (/\b(what (?:should|can) i ask|questions? to ask|negotiat\w*|what (?:should|can) i (?:say|change|request)|email|safer wording|fairer)\b/.test(q)) {
-      if (!report) return { text: needReport };
-      const top = sorted(flags).filter((f) => f.level !== "LOW").slice(0, 4);
-      if (!top.length) return { text: "There are no medium or high risks to ask about. You could still ask for anything you don't understand to be explained in writing." };
-      return { text: "Ask for these, in this order:\n" + top.map((f) => `• ${link(f)} ${f.question}\n  Ask for: “${f.safer_wording}”`).join("\n") + "\nTip: \"Copy clarification email\" puts all of this into a ready email.", refs: top.map((f) => f.id) };
-    }
+  function whatToAsk({ flags }) {
+    const top = sorted(flags).filter((f) => f.level !== "LOW").slice(0, 4);
+    if (!top.length) return { text: "There are no medium or high risks to ask about. You could still ask for anything you don't understand to be explained in writing." };
+    return { text: "Ask for these, in this order:\n" + top.map((f) => `• ${link(f)} ${f.question}\n  Ask for: “${f.safer_wording}”`).join("\n") + "\nTip: \"Copy clarification email\" puts all of this into a ready email.", refs: top.map((f) => f.id) };
+  }
 
-    // What is not a risk.
-    if (/\b(not (?:a )?risk|skipped|ignored|safe parts|protects? me|good parts|in my favou?r)\b/.test(q)) {
-      if (!report) return { text: needReport };
-      const ex = o.skipped_examples || [];
-      const defended = flags.filter((f) => f.defended).slice(0, 3);
-      const parts = [];
-      if (ex.length) parts.push(`${o.skipped} sentence(s) sound risky but protect you or are your own choice, so they weren't counted:\n` + ex.slice(0, 3).map((s) => `• ${s.label}: ${quote(s.text)} (${s.reason})`).join("\n"));
-      if (defended.length) parts.push("These risks are lowered because the document also protects you:\n" + defended.map((f) => `• ${link(f)} ${f.risk_name}: ${f.defender}`).join("\n"));
-      return { text: parts.join("\n\n") || "LEXGUARD didn't find sentences that protect you here. That doesn't mean there are none, only that its rules didn't spot them.", refs: defended.map((f) => f.id) };
-    }
+  function protections({ flags, o }) {
+    const ex = o.skipped_examples || [];
+    const defended = flags.filter((f) => f.defended).slice(0, 3);
+    const parts = [];
+    if (ex.length) parts.push(`${o.skipped} sentence(s) sound risky but protect you or are your own choice, so they weren't counted:\n` + ex.slice(0, 3).map((s) => `• ${s.label}: ${quote(s.text)} (${s.reason})`).join("\n"));
+    if (defended.length) parts.push("These risks are lowered because the document also protects you:\n" + defended.map((f) => `• ${link(f)} ${f.risk_name}: ${f.defender}`).join("\n"));
+    return { text: parts.join("\n\n") || "LEXGUARD didn't find sentences that protect you here. That doesn't mean there are none, only that its rules didn't spot them.", refs: defended.map((f) => f.id) };
+  }
 
-    // Summary of the document.
-    if (/\b(what is this|summar\w*|in short|overview|tl;?dr|main risks?|biggest risks?|worst|key points?)\b/.test(q)) {
-      if (!report) return { text: needReport };
-      const top = sorted(flags).filter((f) => f.level !== "LOW").slice(0, 3);
-      return { text: `This is a ${report.doc_type.label.toLowerCase()} with ${report.clause_count} sentences, scored ${o.score}/100 (${o.level} risk).` + (top.length ? `\nThe main risks:\n${top.map((f) => `• ${link(f)} ${f.risk_name}: ${plain(f.reason)}`).join("\n")}` : "\nNo medium or high risks were found."), refs: top.map((f) => f.id) };
-    }
+  function summary({ report, flags, o }) {
+    const top = sorted(flags).filter((f) => f.level !== "LOW").slice(0, 3);
+    return { text: `This is a ${report.doc_type.label.toLowerCase()} with ${report.clause_count} sentences, scored ${o.score}/100 (${o.level} risk).` + (top.length ? `\nThe main risks:\n${top.map((f) => `• ${link(f)} ${f.risk_name}: ${plain(f.reason)}`).join("\n")}` : "\nNo medium or high risks were found."), refs: top.map((f) => f.id) };
+  }
 
-    // A legal word.
-    const define = /\b(what (?:is|are|does)|meaning of|define|definition|explain)\b/.test(q) || q.split(/\s+/).length <= 3;
-    const g = glossaryHit(q);
-    if (g && define) {
-      const topic = TOPICS.find(([re]) => re.test(g.term));
-      const inDoc = report && topic ? flags.filter((f) => topic[1].includes(f.rule)) : [];
-      return { text: g.text + (inDoc.length ? `\n\nIn this document: ${inDoc.slice(0, 2).map((f) => `${link(f)} ${quote(f.text)}`).join(" ")}` : ""), refs: inDoc.slice(0, 2).map((f) => f.id) };
-    }
+  // The meaning, plus where this document uses the word (never quoted from a non-English report).
+  function defineWord({ report, flags, foreign }, g) {
+    const topic = TOPICS.find(([re]) => re.test(g.term));
+    const inDoc = report && !foreign && topic ? flags.filter((f) => topic[1].includes(f.rule)) : [];
+    return { text: g.text + (inDoc.length ? `\n\nIn this document: ${inDoc.slice(0, 2).map((f) => `${link(f)} ${quote(f.text)}`).join(" ")}` : ""), refs: inDoc.slice(0, 2).map((f) => f.id) };
+  }
 
-    // A topic: refunds, data, pay, notice ... When several match ("pay everything upfront"),
-    // prefer the one this document actually has risks for, then the one with more matching words.
-    const hasRule = (rules) => flags.some((f) => rules.includes(f.rule) || f.also.some((a) => rules.includes(a.rule)));
-    const topic = TOPICS
+  // When several topics match ("pay everything upfront"), prefer the one this document actually
+  // has risks for, then the one with more matching words.
+  function pickTopic(q, flags) {
+    const hasRule = (rules) => flags.some((f) => touches(f, rules));
+    return TOPICS
       .map((t, i) => ({ t, i, n: (q.match(new RegExp(t[0].source, "gi")) || []).length }))
       .filter((x) => x.n)
       .sort((a, b) => hasRule(b.t[1]) - hasRule(a.t[1]) || b.n - a.n || a.i - b.i)
       .map((x) => x.t)[0];
-    if (topic) {
-      const [, rules, name] = topic;
-      if (!report) {
-        const known = (RULES || []).filter((r) => rules.includes(r.id));
-        return { text: `${needReport}\nAbout ${name}, LEXGUARD looks for: ${known.map((r) => r.name.toLowerCase()).join(", ") || rules.join(", ")}.` };
-      }
-      const hits = sorted(flags.filter((f) => rules.includes(f.rule) || f.also.some((a) => rules.includes(a.rule))));
-      if (hits.length) {
-        return { text: `About ${name}, this document has ${hits.length} flagged sentence(s):\n\n${hits.slice(0, 3).map(flagLine).join("\n\n")}${hits.length > 3 ? `\n\n…and ${hits.length - 3} more in the cards below.` : ""}`, refs: hits.slice(0, 3).map((f) => f.id) };
-      }
-      const found = search(report, question);
-      return { text: `LEXGUARD found no risk about ${name} in this document.` + (found.length ? `\nThe document mentions it here:\n${found.map((s) => `• ${quote(s.text)}`).join("\n")}` : "") };
+  }
+
+  function topicAnswer({ report, flags, question }, [, rules, name]) {
+    const hits = sorted(flags.filter((f) => touches(f, rules)));
+    if (hits.length) {
+      return { text: `About ${name}, this document has ${hits.length} flagged sentence(s):\n\n${hits.slice(0, 3).map(flagLine).join("\n\n")}${hits.length > 3 ? `\n\n…and ${hits.length - 3} more in the cards below.` : ""}`, refs: hits.slice(0, 3).map((f) => f.id) };
     }
+    const found = search(report, question);
+    return { text: `LEXGUARD found no risk about ${name} in this document.` + (found.length ? `\nThe document mentions it here:\n${found.map((s) => `• ${quote(s.text)}`).join("\n")}` : "") };
+  }
 
-    if (g) return { text: g.text };
+  // Before any check, say what LEXGUARD would look for on this topic.
+  function topicRules(ctx, [, rules, name]) {
+    const known = (RULES || []).filter((r) => rules.includes(r.id));
+    return { text: `${NEED_REPORT}\nAbout ${name}, LEXGUARD looks for: ${known.map((r) => r.name.toLowerCase()).join(", ") || rules.join(", ")}.` };
+  }
 
-    // Fall back to the sentences that best match the question.
-    if (!report) return { text: needReport };
+  function bestMatches({ report, question }) {
     const found = search(report, question);
     if (found.length) {
       return { text: `I don't have a ready answer, but these parts of the document match your question:\n${found.map((s) => `• ${quote(s.text)}`).join("\n")}\nRead them carefully, and ask the other side if anything is unclear.` };
     }
     return { text: "I couldn't find that in this document. Try asking about refunds, fees, your data, notice period, cancelling, or a clause number, or ask what a legal word means." };
+  }
+
+  // ---- Intents ----------------------------------------------------------------------------------
+  // Tried in order (so order is precedence): the first whose test(q, ctx) returns something truthy
+  // answers, and that value (a regex match, glossary entry or topic) goes to handle(ctx, match).
+  // `doc` intents answer from the checked document, so they need a report (else NEED_REPORT, or
+  // their own noReport) in a language the rules can read (else the English-only notice).
+  const INTENTS = [
+    { name: "empty", test: (q) => !q, handle: () => ({ text: "Ask me anything about the document, for example \"Can I get a refund?\" or \"What does indemnity mean?\"." }) },
+    { name: "greeting", test: (q) => /^(hi|hello|hey|namaste|help|what can you do|how do you work|who are you)\b/.test(q), handle: greet },
+    // A specific clause or sentence: "clause 7", "sentence 12", "section 2.3".
+    { name: "clause", doc: true, test: (q) => q.match(/\b(clause|section|sentence|point|para(?:graph)?)\s*(\d{1,3}(?:\.\d{1,2})?)\b/), handle: explainClause },
+    { name: "score", doc: true, test: (q) => /\b(score|points?|rating|how (?:risky|bad)|risk level|why (?:is it|so) (?:high|low))\b/.test(q), handle: explainScore },
+    { name: "should I sign", doc: true, test: (q) => /\b(should i (?:sign|agree|accept|join|buy|pay)|is (?:it|this) (?:safe|ok|okay|fair|good|legit)|can i (?:sign|trust)|safe to)\b/.test(q), handle: verdict },
+    { name: "what to ask", doc: true, test: (q) => /\b(what (?:should|can) i ask|questions? to ask|negotiat\w*|what (?:should|can) i (?:say|change|request)|email|safer wording|fairer)\b/.test(q), handle: whatToAsk },
+    { name: "not a risk", doc: true, test: (q) => /\b(not (?:a )?risk|skipped|ignored|safe parts|protects? me|good parts|in my favou?r)\b/.test(q), handle: protections },
+    { name: "summary", doc: true, test: (q) => /\b(what is this|summar\w*|in short|overview|tl;?dr|main risks?|biggest risks?|worst|key points?)\b/.test(q), handle: summary },
+    // "What is X?" or a short question naming a legal word.
+    { name: "define", test: (q, c) => c.g && (/\b(what (?:is|are|does)|meaning of|define|definition|explain)\b/.test(q) || q.split(/\s+/).length <= 3) && c.g, handle: defineWord },
+    { name: "topic", doc: true, test: (q, c) => pickTopic(q, c.flags), handle: topicAnswer, noReport: topicRules },
+    { name: "glossary", test: (q, c) => c.g, handle: (c, g) => ({ text: g.text }) },
+    // Fall back to the sentences that best match the question.
+    { name: "search", doc: true, test: () => true, handle: bestMatches },
+  ];
+
+  function answer(questionRaw, report) {
+    // Cut to the input's limit here too: questions can also come from code or pasted text.
+    const question = String(questionRaw || "").trim().slice(0, MAX_QUESTION).trimEnd();
+    const q = question.toLowerCase();
+    const ctx = {
+      question, report,
+      flags: (report && report.flags) || [],
+      o: report ? report.overall : null,
+      foreign: foreignLanguage(report),
+      g: glossaryHit(q),
+    };
+    for (const intent of INTENTS) {
+      const match = intent.test(q, ctx);
+      if (!match) continue;
+      if (intent.doc && !report) return intent.noReport ? intent.noReport(ctx, match) : { text: NEED_REPORT };
+      if (intent.doc && ctx.foreign) return { text: englishOnly(ctx.foreign) };
+      return intent.handle(ctx, match);
+    }
   }
 
   // ---- Rendering --------------------------------------------------------------------------------
@@ -245,7 +281,9 @@ const LexChat = (() => {
   }
 
   function suggestions(report) {
-    if (!report) return ["What is indemnity?", "What does arbitration mean?", "What is a notice period?"];
+    // Before a check, or for a document the rules can't read (and that shows no score), only
+    // word meanings make sense.
+    if (!report || foreignLanguage(report)) return ["What is indemnity?", "What does arbitration mean?", "What is a notice period?"];
     const list = ["Should I sign this?", `Why is the score ${report.overall.score}?`, "What should I ask?"];
     const t = report.doc_type.type;
     list.push(t === "offer_letter" ? "Can I leave early?" : t === "quotation" ? "Are there hidden fees?" : t === "ticket" ? "Can I get a refund?" : "What happens to my data?");

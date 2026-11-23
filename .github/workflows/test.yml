@@ -1,0 +1,35 @@
+# Every test on every push and pull request: Linux and Windows, oldest and newest supported Python.
+name: test
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false  # let every leg finish, so one failure shows which OS/Python it is
+      matrix:
+        # ubuntu-24.04, not -latest: setup-python has no 3.9 build for Ubuntu 26.04
+        os: [ubuntu-24.04, windows-latest]
+        python: ["3.9", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: All tests (sync, copies, benchmark, parity, chat, server)
+        run: python tools/run_all_tests.py
+      - name: Extension copies are committed
+        # the sync above rewrites extension/; intent-to-add makes a never-committed new copy show in the diff too
+        run: |
+          git add --intent-to-add extension
+          git diff --exit-code
+      - name: Accuracy smoke test (public datasets, validation split)
+        if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.13'
+        run: python -m eval.public_datasets --split validation

@@ -157,7 +157,30 @@ const LexReport = (() => {
     return `No serious risks found in ${doc.toLowerCase()}. Still read it: LEXGUARD only knows the patterns in its rule library.`;
   }
 
+  // ---- Documents the rules cannot read ---------------------------------------------------
+  // The rules only read English: a Hindi page gives 0 flags, and a score would wrongly say "LOW risk".
+  const supported = (r) => !(r.language && r.language.supported === false);
+  // The flags a page may show, so callers can render cards and highlights without checking.
+  const visibleFlags = (r) => (supported(r) ? r.flags : []);
+  const SCRIPT_NAMES = { CJK: "Chinese, Japanese or Korean", Other: "non-English" };
+
+  function languageNotice(r) {
+    // Latin can be the top script and still under half the letters (an English + Hindi + Kannada
+    // notice), so "looks like Latin text" would contradict "English only": say it is mixed instead.
+    const s = r.language.script;
+    const what = !s || s === "Latin"
+      ? "Most of this one is not in English"
+      : `This one looks like ${esc(SCRIPT_NAMES[s] || s)} text`;
+    return `
+      <div class="topq notice" role="status">
+        <h3>English documents only</h3>
+        <p>LEXGUARD can only check English documents for now. ${what}, so no score is shown: the rules cannot read most of it, and a score would wrongly look safe.</p>
+        <p class="hint">If there is an English version of this document, check that one instead.</p>
+      </div>`;
+  }
+
   function summary(r) {
+    if (!supported(r)) return languageNotice(r);
     const o = r.overall;
     const main = groups(r).filter((g) => g.level !== "LOW");
     const shown = main.slice(0, 5);
@@ -184,7 +207,7 @@ const LexReport = (() => {
     const also = f.also.length ? `<div class="also">Also matches: ${f.also.map((a) => esc(a.name)).join(", ")}</div>` : "";
     const india = f.jurisdiction === "IN" ? `<span class="tag">India rule</span>` : "";
     return `
-      <article class="card ${LEVEL_CLASS[f.level]}" data-id="${f.id}" tabindex="0">
+      <article class="card ${LEVEL_CLASS[f.level]}" data-id="${f.id}" tabindex="0" role="button" aria-label="${f.level} risk: ${esc(f.risk_name)}, ${esc(f.label)}. Press Enter to show it in the document.">
         <header><span class="badge ${LEVEL_CLASS[f.level]}">${f.level}</span><span class="cname">${esc(f.risk_name)}</span><span class="clabel">${esc(f.label)}</span>${india}</header>
         <p class="gist">${esc(plain(f.reason))}</p>
         <p class="ask"><b>Ask:</b> ${esc(f.question)}</p>
@@ -203,7 +226,7 @@ const LexReport = (() => {
 
   function highlighted(r, minLevel) {
     const order = { LOW: 0, MEDIUM: 1, HIGH: 2 };
-    const flags = r.flags.filter((f) => order[f.level] >= order[minLevel]).sort((a, b) => a.start - b.start);
+    const flags = visibleFlags(r).filter((f) => order[f.level] >= order[minLevel]).sort((a, b) => a.start - b.start);
     let html = "", pos = 0;
     for (const f of flags) {
       html += esc(r.text.slice(pos, f.start));
@@ -214,10 +237,12 @@ const LexReport = (() => {
   }
 
   function email(r) {
-    const items = r.flags.filter((f) => f.level !== "LOW").sort((a, b) => b.weight - a.weight);
+    const items = visibleFlags(r).filter((f) => f.level !== "LOW").sort((a, b) => b.weight - a.weight);
     const lines = items.map((f, i) => `${i + 1}. ${f.label}: "${f.text.replace(/\s+/g, " ")}"\n   ${f.question}\n   Suggested wording: ${f.safer_wording}`);
     return `Subject: Clarifications before I sign\n\nHello,\n\nThank you for sharing the document. Before signing, I would like to clarify the following points:\n\n${lines.join("\n\n")}\n\nI look forward to your reply.\n\nRegards,\n`;
   }
 
-  return { esc, summary, card, highlighted, email };
+  return { esc, summary, card, highlighted, email, supported, visibleFlags };
 })();
+
+if (typeof module !== "undefined") module.exports = LexReport;

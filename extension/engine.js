@@ -1,6 +1,6 @@
 // LEXGUARD engine for the browser: Extractor -> Risk Finder -> Defender -> Judge.
 // A line-for-line port of the Python engine in ../engine, using the same rules.json,
-// so the extension works with no server. eval/parity_check.js checks both give the same flags.
+// so the extension works with no server. eval/parity_check.py checks both give the same flags.
 const LexEngine = (() => {
   // ---- Extractor -------------------------------------------------------------------------
   const ABBREVIATIONS = new Set([
@@ -98,6 +98,51 @@ const LexEngine = (() => {
     const total = Object.values(scores).reduce((a, b) => a + b, 0) || 1;
     if (scores[best] === 0) best = "policy";
     return { type: best, label: LABELS[best], confidence: round(scores[best] / total), scores };
+  }
+
+  // ---- Language --------------------------------------------------------------------------
+  // Mirrors engine/language.py. The rules only read English: a Hindi or Kannada document
+  // gives 0 flags, which would look like "LOW risk", so the UI shows a notice instead.
+  const MIN_LETTERS = 20; // too few letters to judge (a title, a number list): assume English
+  // [script, code-point ranges]. Order breaks ties, so Latin wins an even split.
+  const SCRIPTS = [
+    ["Latin", [[0x0000, 0x024f], [0x1e00, 0x1eff]]], // ASCII, Latin-1, Extended-A/B, Additional
+    ["Devanagari", [[0x0900, 0x097f]]],
+    ["Bengali", [[0x0980, 0x09ff]]],
+    ["Gurmukhi", [[0x0a00, 0x0a7f]]],
+    ["Gujarati", [[0x0a80, 0x0aff]]],
+    ["Odia", [[0x0b00, 0x0b7f]]],
+    ["Tamil", [[0x0b80, 0x0bff]]],
+    ["Telugu", [[0x0c00, 0x0c7f]]],
+    ["Kannada", [[0x0c80, 0x0cff]]],
+    ["Malayalam", [[0x0d00, 0x0d7f]]],
+    ["Arabic", [[0x0600, 0x06ff]]],
+    ["CJK", [[0x4e00, 0x9fff], [0x3040, 0x30ff], [0xac00, 0xd7af]]],
+  ];
+  const SCRIPT_ORDER = [...SCRIPTS.map(([name]) => name), "Other"];
+  const LETTER = /\p{L}/u; // same letters as Python's str.isalpha()
+
+  function scriptOf(cp) {
+    for (const [name, ranges] of SCRIPTS) if (ranges.some(([lo, hi]) => lo <= cp && cp <= hi)) return name;
+    return "Other";
+  }
+
+  function detectLanguage(text) {
+    // Count each distinct character once, then classify it, so a long page stays fast.
+    const chars = new Map();
+    for (const ch of text) chars.set(ch, (chars.get(ch) || 0) + 1);
+    const counts = Object.fromEntries(SCRIPT_ORDER.map((s) => [s, 0]));
+    for (const [ch, n] of chars) if (LETTER.test(ch)) counts[scriptOf(ch.codePointAt(0))] += n;
+    const letters = Object.values(counts).reduce((a, b) => a + b, 0);
+    const latin = counts.Latin;
+    let script = "Latin";
+    for (const s of SCRIPT_ORDER) if (counts[s] > counts[script]) script = s;
+    return {
+      supported: letters < MIN_LETTERS || latin * 2 >= letters,
+      script,
+      // Half-up in integers, so Python and JavaScript round the same way.
+      latin_share: letters ? Math.floor((200 * latin + letters) / (2 * letters)) / 100 : 1,
+    };
   }
 
   // ---- Rules -----------------------------------------------------------------------------
@@ -350,6 +395,8 @@ const LexEngine = (() => {
     if (!rules) throw new Error("Rules not loaded");
     const t0 = typeof performance !== "undefined" ? performance.now() : Date.now();
     text = clean(text);
+    // The rules still run; the UI hides the score when the text is not English.
+    const language = detectLanguage(text);
     let detected = detect(text);
     if (LABELS[docType]) detected = { ...detected, type: docType, label: LABELS[docType], confidence: 1 };
     else if (docType === "any") detected = { ...detected, type: "any", label: "All rule packs", confidence: 1 };
@@ -360,7 +407,7 @@ const LexEngine = (() => {
     const [flags, overall] = judge(clauses, rules);
     const t1 = typeof performance !== "undefined" ? performance.now() : Date.now();
     return {
-      text, doc_type: detected, clause_count: clauses.length, overall, flags,
+      text, doc_type: detected, language, clause_count: clauses.length, overall, flags,
       rules_checked: rules.risks.filter((r) => applies(r, detected.type)).length,
       ai_layer: { used: false, note: "Runs inside your browser using the offline rule library. Nothing is uploaded." },
       elapsed_ms: round(t1 - t0, 1),
@@ -368,7 +415,7 @@ const LexEngine = (() => {
     };
   }
 
-  return { loadRules, setRules, analyze, LABELS };
+  return { loadRules, setRules, analyze, detectLanguage, LABELS };
 })();
 
 if (typeof module !== "undefined") module.exports = LexEngine;

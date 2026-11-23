@@ -2,6 +2,28 @@
 
 All notable changes to LEXGUARD. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follow `extension/manifest.json`.
 
+## [0.7.0] - 2026-11-23
+### Added
+- Language check in both engines (`engine/language.py`, `detectLanguage` in `extension/engine.js`). Documents that are mostly not in English (Hindi, Kannada, Chinese and so on) now get an "English documents only" notice instead of a false LOW score, in the report, side panel, checker, web app and chat.
+- `tools/run_all_tests.py`: one command for the sync, a copies check, benchmark, parity, chat and server tests.
+- GitHub Actions workflow (`.github/workflows/test.yml`): Ubuntu and Windows, Python 3.9 and 3.13, Node 20.
+- `eval/server_test.py` (18 checks) and `requirements.txt` (optional `pypdf>=6.0`).
+- Benchmark target "Non-English documents refused"; 3 language cases in the parity check; 17 more chat tests (65 in all).
+- Keyboard: Enter or Space on a risk card jumps to its sentence; cards have `role="button"` and a spoken label. Visible focus outline on cards.
+### Changed
+- In-page highlighting builds the page index once per check instead of once per flag: about 15 ms instead of 850 ms on a 30,000-word terms page, and about 0.1 s instead of 41 s on a page six times that size.
+- The chat's intent checks are an ordered table; questions are capped at 300 characters. Answers are unchanged (compared on more than 8,000 questions).
+- The extension requires Chrome 116 or newer (`minimum_chrome_version`).
+- Light-theme medium-risk text is darker (contrast 5.6:1, was 4.3:1).
+- `eval.public_datasets` writes `eval/results_public.*` only for the held-out test run.
+### Fixed
+- Local server: path tricks (`..`, UNC and device paths, drive letters) no longer reach files outside each route's folder; wildcard CORS removed; requests for other Host names get 403; bad or negative `Content-Length` gets 400 instead of hanging; bodies over 10 MB get 413; errors no longer leak details; security headers and a Content-Security-Policy are set; `/health` reports the real version.
+- pdf.js runs with `isEvalSupported: false` (CVE-2024-4367).
+- The side panel's terms-link list ignores `javascript:` and other non-web links.
+- The score breakdown no longer scrolls sideways in a 320 px side panel.
+- Highlighting stayed aligned after a Turkish "İ" on the page.
+- Document text can no longer plant fake clause links or bold text in chat answers.
+
 ## [0.6.0] - 2026-11-19
 ### Added
 - **Ask LEXGUARD:** an offline chatbot in the side panel, checker page and web app. It answers from the current report, the rules and a 30-term glossary; quotes sentences and links to clauses; uses no AI model and uploads nothing.
