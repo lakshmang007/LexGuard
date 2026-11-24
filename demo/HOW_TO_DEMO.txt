@@ -115,3 +115,5 @@ Why not ChatGPT?     Chatbots can invent things and need your document uploaded.
 Is it legal advice?  No, it's a review aid that tells you what to ask before signing.
 
 LEXGUARD_Demo_Video.mp4 is a 77-second silent recording of the extension (0.7.0) with captions: the signup page, the score, the chat, both offer letters and a Hindi document, to play while you talk.
+
+New to LEXGUARD? LEXGUARD_Install_Video.mp4 (60 seconds) shows how to install it.

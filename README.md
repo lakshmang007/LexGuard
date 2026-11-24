@@ -10,9 +10,9 @@ It runs entirely in your browser. There is no server to set up, no account, no A
 
 > A review aid, not legal advice. All sample documents in this repo are synthetic: no real people or contracts.
 
-![LEXGUARD side panel next to a signup page, with risky sentences highlighted in red and yellow](docs/images/extension-demo.png)
+[![LEXGUARD in action: the side panel checks a signup page, marks risky sentences in red and yellow, and explains a 76/100 score](docs/images/demo-preview.gif)](demo/LEXGUARD_Demo_Video.mp4)
 
-A 77-second walkthrough of version 0.7.0 is in [`demo/LEXGUARD_Demo_Video.mp4`](demo/LEXGUARD_Demo_Video.mp4).
+**Videos:** [77-second demo](demo/LEXGUARD_Demo_Video.mp4) (page check, score, chat, offer letters, a Hindi document) · [60-second install guide](demo/LEXGUARD_Install_Video.mp4)
 
 ## Features
 
@@ -27,7 +27,7 @@ A 77-second walkthrough of version 0.7.0 is in [`demo/LEXGUARD_Demo_Video.mp4`](
 
 **Requirements:** Chrome, Edge or Brave **116 or newer** on desktop. The extension has no other dependencies.
 
-LEXGUARD is not on the Chrome Web Store yet, so it is installed in Developer mode:
+LEXGUARD is not on the Chrome Web Store yet, so it is installed in Developer mode. The [install video](demo/LEXGUARD_Install_Video.mp4) (60 seconds, recorded in Microsoft Edge; Chrome is the same) shows every step:
 
 1. Download **`LEXGUARD-0.7.0.zip`** from the [latest release](https://github.com/lakshmang007/LexGuard/releases/latest) and unzip it. (Or download this repository with **Code → Download ZIP** and use its `extension` folder.)
 2. Open `chrome://extensions` (or `edge://extensions`) and turn on **Developer mode**.
@@ -155,7 +155,7 @@ engine/      Python engine: extractor, risk_finder, defender, impact, judge, doc
 web/         local web app pages; report.js, chat.js, style.css, theme.js, motion.js (copied into extension/)
 server.py    local web app server (standard library)
 samples/     synthetic test documents and planted-risk labels
-demo/        demo kit: sample .txt/.pdf files, demo signup page, HOW_TO_DEMO.txt, demo video
+demo/        demo kit: sample .txt/.pdf files, demo signup page, HOW_TO_DEMO.txt, demo and install videos
 datasets/    UNFAIR-ToS and CUAD (CC BY 4.0)
 eval/        benchmark, dataset evaluation, parity check, chat and server tests, results
 tools/       run_all_tests.py, make_release.py, sync_extension.py, make_demo_kit.py, make_rules_doc.py
