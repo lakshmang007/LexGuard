@@ -12,7 +12,7 @@ It runs entirely in your browser. There is no server to set up, no account, no A
 
 ![LEXGUARD side panel next to a signup page, with risky sentences highlighted in red and yellow](docs/images/extension-demo.png)
 
-A 90-second walkthrough is in [`demo/LEXGUARD_Demo_Video.mp4`](demo/LEXGUARD_Demo_Video.mp4).
+A 77-second walkthrough of version 0.7.0 is in [`demo/LEXGUARD_Demo_Video.mp4`](demo/LEXGUARD_Demo_Video.mp4).
 
 ## Features
 

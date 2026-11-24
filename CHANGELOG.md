@@ -8,6 +8,7 @@ All notable changes to LEXGUARD. Format: [Keep a Changelog](https://keepachangel
 - `tools/run_all_tests.py`: one command for the sync, a copies check, benchmark, parity, chat and server tests.
 - GitHub Actions workflow (`.github/workflows/test.yml`): Ubuntu and Windows, Python 3.9 and 3.13, Node 20.
 - `eval/server_test.py` (18 checks) and `requirements.txt` (optional `pypdf>=6.0`).
+- A new 77-second demo video of 0.7.0 (`demo/LEXGUARD_Demo_Video.mp4`), with the current repository link.
 - MIT licence, and `tools/make_release.py`, which builds `dist/LEXGUARD-<version>.zip` for GitHub releases.
 - Benchmark target "Non-English documents refused"; 3 language cases in the parity check; 17 more chat tests (65 in all).
 - Keyboard: Enter or Space on a risk card jumps to its sentence; cards have `role="button"` and a spoken label. Visible focus outline on cards.

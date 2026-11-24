@@ -114,4 +114,4 @@ Why not ChatGPT?     Chatbots can invent things and need your document uploaded.
                      quotes the exact sentence and checks protections before warning.
 Is it legal advice?  No, it's a review aid that tells you what to ask before signing.
 
-LEXGUARD_Demo_Video.mp4 is a 90-second silent screen recording of these steps with captions, to play while you talk.
+LEXGUARD_Demo_Video.mp4 is a 77-second silent recording of the extension (0.7.0) with captions: the signup page, the score, the chat, both offer letters and a Hindi document, to play while you talk.
