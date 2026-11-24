@@ -30,8 +30,14 @@ jobs:
         run: python tools/make_release.py
       - name: Release notes from CHANGELOG.md
         run: |
-          v="${GITHUB_REF_NAME#v}"
-          awk -v h="## [$v]" 'index($0, h) == 1 {on=1; next} /^## / {on=0} on' CHANGELOG.md > notes.md
+          python - <<'PY' > notes.md
+          import os, re
+          v = os.environ["GITHUB_REF_NAME"].lstrip("v")
+          text = open("CHANGELOG.md", encoding="utf-8").read()
+          m = re.search(r"^## \[" + re.escape(v) + r"\][^\n]*\n(.*?)(?=^## |\Z)", text, re.S | re.M)
+          print(m.group(1).strip() if m else "")
+          PY
+          cat notes.md
           printf '\n**Install:** unzip, open chrome://extensions, turn on Developer mode, click Load unpacked and choose the LEXGUARD folder. Chrome, Edge or Brave 116+.\n' >> notes.md
       - uses: softprops/action-gh-release@v2
         with:
