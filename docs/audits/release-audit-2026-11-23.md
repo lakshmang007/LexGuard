@@ -13,7 +13,7 @@ Follow-up to the [release](release-audit-2026-11-19.md), [security](security-aud
 | Tests | 0 | 0 | 0 | 1 | No automated highlighter test (checked by hand in the browser) |
 | Security | 0 | 1 | 0 | 0 | The old key in git history; everything else fixed |
 | Compatibility | 0 | 0 | 0 | 1 | Snippets under 20 letters aren't language-checked |
-| Build & release | 0 | 0 | 1 | 1 | No LICENSE; CI not yet run on GitHub |
+| Build & release | 0 | 0 | 0 | 1 | MIT licence added; CI green on GitHub; releases built by `.github/workflows/release.yml` |
 
 ## Status of the 2026-11-19 findings
 | Finding | Was | Status | Evidence |

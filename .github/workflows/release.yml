@@ -1,0 +1,40 @@
+# On a version tag (v0.7.0 ...): run the tests, build dist/LEXGUARD-<version>.zip and
+# publish a GitHub release with the zip attached and the version's changelog as notes.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Tests
+        run: python tools/run_all_tests.py
+      - name: Version matches the tag
+        run: |
+          v=$(python -c "import json; print(json.load(open('extension/manifest.json'))['version'])")
+          test "v$v" = "$GITHUB_REF_NAME" || { echo "manifest says $v, tag is $GITHUB_REF_NAME"; exit 1; }
+      - name: Build zip
+        run: python tools/make_release.py
+      - name: Release notes from CHANGELOG.md
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          awk -v v="$v" '$0 ~ "^## \[" v "\]" {on=1; next} /^## \[/ {on=0} on' CHANGELOG.md > notes.md
+          printf '\n**Install:** unzip, open chrome://extensions, turn on Developer mode, click Load unpacked and choose the LEXGUARD folder. Chrome, Edge or Brave 116+.\n' >> notes.md
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: LEXGUARD ${{ github.ref_name }}
+          body_path: notes.md
+          files: dist/LEXGUARD-*.zip

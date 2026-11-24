@@ -56,6 +56,6 @@ python -m eval.public_datasets --split validation   # accuracy on public data (u
 
 1. Bump `version` in `extension/manifest.json` and move **Unreleased** in `CHANGELOG.md` under that version.
 2. Run `python tools/run_all_tests.py`, then `python tools/make_release.py` (writes `dist/LEXGUARD-<version>.zip`).
-3. Tag `v<version>`, push the tag, and create a GitHub release from it with the zip attached.
+3. Tag `v<version>` and push the tag: `.github/workflows/release.yml` runs the tests, builds the zip and publishes the GitHub release with the changelog as notes.
 
 By contributing you agree that your contribution is licensed under the [MIT licence](LICENSE).
