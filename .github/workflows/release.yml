@@ -31,7 +31,7 @@ jobs:
       - name: Release notes from CHANGELOG.md
         run: |
           v="${GITHUB_REF_NAME#v}"
-          awk -v v="$v" '$0 ~ "^## \[" v "\]" {on=1; next} /^## \[/ {on=0} on' CHANGELOG.md > notes.md
+          awk -v h="## [$v]" 'index($0, h) == 1 {on=1; next} /^## / {on=0} on' CHANGELOG.md > notes.md
           printf '\n**Install:** unzip, open chrome://extensions, turn on Developer mode, click Load unpacked and choose the LEXGUARD folder. Chrome, Edge or Brave 116+.\n' >> notes.md
       - uses: softprops/action-gh-release@v2
         with:
