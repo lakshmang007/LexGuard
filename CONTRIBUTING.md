@@ -51,3 +51,11 @@ python -m eval.public_datasets --split validation   # accuracy on public data (u
 - Include the benchmark and parity output if you touched rules or the engine.
 - Update `CHANGELOG.md` under **Unreleased**, and bump `version` in `extension/manifest.json` when the extension changes.
 - Sample documents must be synthetic: no real names, companies or personal data.
+
+## Releasing
+
+1. Bump `version` in `extension/manifest.json` and move **Unreleased** in `CHANGELOG.md` under that version.
+2. Run `python tools/run_all_tests.py`, then `python tools/make_release.py` (writes `dist/LEXGUARD-<version>.zip`).
+3. Tag `v<version>`, push the tag, and create a GitHub release from it with the zip attached.
+
+By contributing you agree that your contribution is licensed under the [MIT licence](LICENSE).

@@ -27,7 +27,7 @@ Follow-up to the [release](release-audit-2026-11-19.md), [security](security-aud
 | No pinned dependency versions | Low | Fixed | `requirements.txt`: `pypdf>=6.0` (optional) |
 | Highlighting O(flags × page) | Medium | Fixed | `extension/content.js`: one index per check. 194K chars/98 flags 853 → ~15 ms; 1.17M chars/583 flags 41 s → ~0.12 s; identical marks to the old code |
 | No CI | Medium | Fixed | `.github/workflows/test.yml`: Ubuntu 24.04 + Windows, Python 3.9 + 3.13, runs `tools/run_all_tests.py` and fails on uncommitted extension copies |
-| No LICENSE | Medium | **Open: owner choice** | No licence file; README says all rights reserved |
+| No LICENSE | Medium | Fixed (after this re-audit) | MIT, chosen by the team; `LICENSE` |
 | Non-English documents get a false LOW | High | Fixed | `engine/language.py` + `detectLanguage`; notice instead of a score in report, side panel, checker, web app and chat. Benchmark target + 3 parity cases |
 | No `minimum_chrome_version` | Medium | Fixed | `extension/manifest.json`: `"116"` |
 | 13 px horizontal scroll at 320 px | Low | Fixed | Breakdown hides its Sentences column under 340 px container width; web app at 320 px: scrollWidth = clientWidth |

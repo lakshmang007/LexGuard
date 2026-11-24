@@ -27,9 +27,11 @@ A 90-second walkthrough is in [`demo/LEXGUARD_Demo_Video.mp4`](demo/LEXGUARD_Dem
 
 **Requirements:** Chrome, Edge or Brave **116 or newer** on desktop. The extension has no other dependencies.
 
-1. Download this repository (**Code → Download ZIP**) and unzip it.
+LEXGUARD is not on the Chrome Web Store yet, so it is installed in Developer mode:
+
+1. Download **`LEXGUARD-0.7.0.zip`** from the [latest release](https://github.com/lakshmang007/LexGuard/releases/latest) and unzip it. (Or download this repository with **Code → Download ZIP** and use its `extension` folder.)
 2. Open `chrome://extensions` (or `edge://extensions`) and turn on **Developer mode**.
-3. Click **Load unpacked** and choose the **`extension`** folder. Choosing the repository folder itself gives "Manifest file is missing".
+3. Click **Load unpacked** and choose the unzipped **`LEXGUARD`** folder (the one that contains `manifest.json`). Choosing a folder above it gives "Manifest file is missing".
 4. Pin LEXGUARD from the puzzle-piece menu.
 5. To check local `.html` files (like the demo signup page), open the extension's **Details** and turn on **Allow access to file URLs**.
 
@@ -156,7 +158,7 @@ samples/     synthetic test documents and planted-risk labels
 demo/        demo kit: sample .txt/.pdf files, demo signup page, HOW_TO_DEMO.txt, demo video
 datasets/    UNFAIR-ToS and CUAD (CC BY 4.0)
 eval/        benchmark, dataset evaluation, parity check, chat and server tests, results
-tools/       run_all_tests.py, sync_extension.py, make_demo_kit.py, make_rules_doc.py
+tools/       run_all_tests.py, make_release.py, sync_extension.py, make_demo_kit.py, make_rules_doc.py
 docs/        architecture, rule reference, audit reports
 ```
 
@@ -178,6 +180,6 @@ The app itself uses **no AI model or AI service**. Claude (Anthropic) helped pla
 
 ## Licence
 
-**No open-source licence has been chosen yet**, so all rights are reserved by the authors. Third-party parts keep their own licences:
+[MIT](LICENSE) © 2026 Team Root Coders. Third-party parts keep their own licences:
 - `extension/vendor/pdf.min.js` and `pdf.worker.min.js`: Mozilla pdf.js 3.11.174, Apache License 2.0 ([`extension/vendor/LICENSE-pdfjs.txt`](extension/vendor/LICENSE-pdfjs.txt)).
 - `datasets/`: CC BY 4.0, with attribution in [`datasets/README.md`](datasets/README.md).
