@@ -80,6 +80,7 @@ report · highlights · Ask LEXGUARD · clarification email
 **Score:** each kind of risk counts once, at its worst level. HIGH +15, MEDIUM +5, LOW +1, capped at 100. A score of 50 or more is HIGH risk, 20–49 is MEDIUM, and under 20 is LOW.
 
 More detail:
+- [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md): PDF reading, the rules instead of a prompt, and a worked score example.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): components, data flow, the "who does it affect?" check, and the score.
 - [docs/RULES.md](docs/RULES.md): all 32 risks and 18 protections.
 
@@ -164,6 +165,7 @@ docs/        architecture, rule reference, audit reports
 
 ## Documentation
 
+- [How it works](docs/HOW_IT_WORKS.md): how a PDF is read, why there's no AI prompt (and what the first, Gemini version sent), how the score is decided
 - [Architecture](docs/ARCHITECTURE.md)
 - [Rule reference](docs/RULES.md)
 - [Demo guide](demo/HOW_TO_DEMO.txt)

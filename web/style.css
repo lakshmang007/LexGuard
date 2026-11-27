@@ -137,6 +137,10 @@ mark.focus, .card.focus { outline: 3px solid var(--g-blue); outline-offset: 2px;
 .card details[open] > dl { animation: unfold .25s ease-out; }
 /* A long URL in a quoted sentence must not widen a narrow side panel. */
 .card blockquote { margin: 0; padding: 10px 12px; background: var(--bg); border-radius: 10px; font: 14px/1.55 Georgia, serif; overflow-wrap: anywhere; }
+/* The document's own words, always shown next to the explanation, so every claim can be checked. */
+.card blockquote.clause { margin: 8px 0 6px; border-left: 3px solid var(--line, #dadce0); }
+.card.high blockquote.clause { border-left-color: var(--high, #d93025); }
+.card.med blockquote.clause { border-left-color: var(--med, #9a5000); }
 .card dl { display: grid; grid-template-columns: 140px 1fr; gap: 6px 12px; margin: 8px 0 0; font-size: 14px; }
 .card dt { color: var(--muted); } .card dd { margin: 0; }
 .card dd.defended { color: var(--ok); } .card dd.safer { font-style: italic; color: var(--ok); }

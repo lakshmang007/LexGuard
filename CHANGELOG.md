@@ -2,6 +2,12 @@
 
 All notable changes to LEXGUARD. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follow `extension/manifest.json`.
 
+## [Unreleased]
+### Changed
+- Every risk card now shows the document's exact sentence next to the explanation (it was hidden under "See details").
+### Added
+- `docs/HOW_IT_WORKS.md`: how a PDF is read, the rules used instead of an AI prompt (and what the first Gemini version sent), and how the score is decided, with a worked example.
+
 ## [0.7.0] - 2026-11-23
 ### Added
 - Language check in both engines (`engine/language.py`, `detectLanguage` in `extension/engine.js`). Documents that are mostly not in English (Hindi, Kannada, Chinese and so on) now get an "English documents only" notice instead of a false LOW score, in the report, side panel, checker, web app and chat.

@@ -209,12 +209,12 @@ const LexReport = (() => {
     return `
       <article class="card ${LEVEL_CLASS[f.level]}" data-id="${f.id}" tabindex="0" role="button" aria-label="${f.level} risk: ${esc(f.risk_name)}, ${esc(f.label)}. Press Enter to show it in the document.">
         <header><span class="badge ${LEVEL_CLASS[f.level]}">${f.level}</span><span class="cname">${esc(f.risk_name)}</span><span class="clabel">${esc(f.label)}</span>${india}</header>
+        <blockquote class="clause" aria-label="The exact sentence from the document">${esc(f.text)}</blockquote>
         <p class="gist">${esc(plain(f.reason))}</p>
         <p class="ask"><b>Ask:</b> ${esc(f.question)}</p>
         <details>
           <summary>See details</summary>
           <dl>
-            <dt>The sentence</dt><dd><blockquote>${esc(f.text)}</blockquote></dd>
             <dt>Why it matters</dt><dd>${esc(f.reason)}</dd>
             <dt>Protections checked</dt><dd class="${f.defended ? "defended" : ""}">${esc(f.defender)}</dd>
             <dt>Ask for this wording</dt><dd class="safer">${esc(f.safer_wording)}</dd>
